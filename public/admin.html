@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TULPAR — Админ панель</title>
+  <style>
+    :root { --primary:#D4213D; --gold:#F5A623; --dark:#0D0D1A; --dark2:#1A1A2E; --card:#1E2A45; --border:rgba(255,255,255,0.1); --muted:#A0A8C0; --green:#27AE60; --white:#FFFFFF; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--dark); color:var(--white); }
+    nav { background:rgba(13,13,26,0.98); border-bottom:1px solid var(--border); padding:0 5%; display:flex; align-items:center; justify-content:space-between; height:64px; position:sticky; top:0; z-index:10; }
+    .nav-logo { font-size:1.5rem; font-weight:900; background:linear-gradient(90deg,#FF4D6A,#F5A623); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .nav-logo span { -webkit-text-fill-color:var(--white); }
+    .admin-badge { background:rgba(212,33,61,0.2); border:1px solid rgba(212,33,61,0.4); border-radius:20px; padding:0.3rem 0.9rem; font-size:0.8rem; color:#FF8FA0; }
+    .btn-logout { background:none; border:1px solid var(--border); color:var(--muted); padding:0.4rem 0.8rem; border-radius:8px; cursor:pointer; font-size:0.85rem; }
+    .btn-logout:hover { color:var(--white); border-color:var(--primary); }
+    .layout { display:grid; grid-template-columns:220px 1fr; min-height:calc(100vh - 64px); }
+    aside { background:var(--dark2); border-right:1px solid var(--border); padding:1.5rem 0; }
+    .side-nav-item { display:flex; align-items:center; gap:0.7rem; padding:0.8rem 1.5rem; color:var(--muted); text-decoration:none; font-size:0.9rem; transition:all 0.2s; cursor:pointer; border:none; background:none; width:100%; text-align:left; }
+    .side-nav-item:hover { background:rgba(255,255,255,0.05); color:var(--white); }
+    .side-nav-item.active { background:rgba(212,33,61,0.12); color:var(--white); border-right:3px solid var(--primary); }
+    .icon { font-size:1rem; }
+    main { padding:2rem 2.5rem; }
+    .page { display:none; }
+    .page.active { display:block; }
+    h2 { font-size:1.5rem; font-weight:900; margin-bottom:0.3rem; }
+    .page-sub { color:var(--muted); font-size:0.9rem; margin-bottom:2rem; }
+    /* STATS */
+    .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:2rem; }
+    .stat-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:1.3rem; }
+    .stat-label { font-size:0.78rem; color:var(--muted); margin-bottom:0.5rem; }
+    .stat-value { font-size:2rem; font-weight:900; }
+    .stat-value.gold { color:var(--gold); }
+    .stat-value.green { color:var(--green); }
+    .stat-value.red { color:var(--primary); }
+    .stat-sub { font-size:0.75rem; color:var(--muted); margin-top:0.3rem; }
+    /* REVENUE CARDS */
+    .rev-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:2rem; }
+    .rev-card { background:linear-gradient(135deg,rgba(212,33,61,0.1),rgba(26,26,46,0.9)); border:1px solid rgba(212,33,61,0.3); border-radius:12px; padding:1.2rem; text-align:center; }
+    .rev-label { font-size:0.78rem; color:var(--muted); margin-bottom:0.4rem; }
+    .rev-val { font-size:1.3rem; font-weight:900; color:var(--gold); }
+    /* TABLE */
+    .table-controls { display:flex; gap:1rem; margin-bottom:1.2rem; flex-wrap:wrap; align-items:center; }
+    .search-input { background:rgba(255,255,255,0.06); border:1px solid var(--border); border-radius:10px; padding:0.6rem 1rem; color:var(--white); font-size:0.9rem; width:240px; }
+    .search-input:focus { outline:none; border-color:var(--primary); }
+    .filter-select { background:rgba(255,255,255,0.06); border:1px solid var(--border); border-radius:10px; padding:0.6rem 1rem; color:var(--white); font-size:0.9rem; }
+    .filter-select option { background:var(--dark2); }
+    .btn-export { background:rgba(39,174,96,0.15); border:1px solid rgba(39,174,96,0.4); color:var(--green); padding:0.6rem 1.2rem; border-radius:10px; cursor:pointer; font-size:0.9rem; font-weight:600; margin-left:auto; }
+    .btn-export:hover { background:rgba(39,174,96,0.25); }
+    .table-wrap { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; }
+    thead th { background:var(--dark2); padding:0.8rem 1rem; text-align:left; font-size:0.8rem; color:var(--muted); font-weight:600; white-space:nowrap; border-bottom:1px solid var(--border); }
+    tbody tr { border-bottom:1px solid rgba(255,255,255,0.04); transition:background 0.15s; }
+    tbody tr:hover { background:rgba(255,255,255,0.03); }
+    tbody td { padding:0.8rem 1rem; font-size:0.88rem; vertical-align:middle; }
+    .tariff-tag { display:inline-block; padding:0.2rem 0.6rem; border-radius:6px; font-size:0.75rem; font-weight:700; }
+    .tariff-tag.start { background:rgba(41,128,185,0.2); color:#5DADE2; }
+    .tariff-tag.partner { background:rgba(212,33,61,0.2); color:#FF8FA0; }
+    .tariff-tag.leader { background:rgba(245,166,35,0.2); color:var(--gold); }
+    .status-tag { display:inline-block; padding:0.2rem 0.6rem; border-radius:6px; font-size:0.75rem; font-weight:700; }
+    .status-tag.new { background:rgba(245,166,35,0.15); color:var(--gold); }
+    .status-tag.active { background:rgba(39,174,96,0.15); color:var(--green); }
+    .status-tag.paid { background:rgba(39,174,96,0.2); color:#2ECC71; }
+    .status-tag.inactive { background:rgba(128,128,128,0.15); color:#888; }
+    .actions { display:flex; gap:0.5rem; }
+    .btn-sm { padding:0.3rem 0.7rem; border-radius:6px; border:none; cursor:pointer; font-size:0.78rem; font-weight:600; }
+    .btn-status { background:rgba(41,128,185,0.2); color:#5DADE2; }
+    .btn-del { background:rgba(212,33,61,0.2); color:#FF8FA0; }
+    .btn-sm:hover { opacity:0.8; }
+    .empty-row td { text-align:center; padding:3rem; color:var(--muted); }
+    /* MODAL */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:50; align-items:center; justify-content:center; }
+    .modal-overlay.open { display:flex; }
+    .modal { background:var(--dark2); border:1px solid var(--border); border-radius:20px; padding:2rem; width:100%; max-width:440px; }
+    .modal h3 { font-size:1.2rem; font-weight:700; margin-bottom:1.2rem; }
+    .modal-body { margin-bottom:1.5rem; }
+    .info-row { display:flex; justify-content:space-between; padding:0.5rem 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:0.88rem; }
+    .info-label { color:var(--muted); }
+    .modal-footer { display:flex; gap:0.8rem; justify-content:flex-end; }
+    .btn-cancel { background:rgba(255,255,255,0.07); border:1px solid var(--border); color:var(--muted); padding:0.6rem 1.2rem; border-radius:8px; cursor:pointer; }
+    .btn-save { background:var(--primary); color:#fff; border:none; padding:0.6rem 1.2rem; border-radius:8px; cursor:pointer; font-weight:600; }
+    select.status-select { background:rgba(255,255,255,0.06); border:1px solid var(--border); border-radius:8px; padding:0.5rem; color:var(--white); width:100%; margin-top:0.8rem; }
+    /* TOAST */
+    .toast { position:fixed; top:80px; right:20px; padding:1rem 1.5rem; border-radius:12px; font-weight:600; z-index:100; animation:slideIn 0.3s; }
+    .toast.success { background:#1a3d2b; border:1px solid var(--green); color:var(--green); }
+    .toast.error { background:#3d1a1a; border:1px solid var(--primary); color:#FF8FA0; }
+    @keyframes slideIn { from{transform:translateX(100%);opacity:0} to{transform:translateX(0);opacity:1} }
+    .pagination { display:flex; gap:0.5rem; margin-top:1.2rem; justify-content:center; }
+    .pg-btn { background:var(--card); border:1px solid var(--border); color:var(--muted); padding:0.4rem 0.8rem; border-radius:8px; cursor:pointer; font-size:0.85rem; }
+    .pg-btn.active { background:var(--primary); border-color:var(--primary); color:#fff; }
+    @media(max-width:800px) { .layout{grid-template-columns:1fr}; aside{display:none}; .stats-grid,.rev-grid{grid-template-columns:1fr 1fr}; }
+  </style>
+</head>
+<body>
+<nav>
+  <a href="/" class="nav-logo">TUL<span>PAR</span></a>
+  <div style="display:flex;align-items:center;gap:1rem;">
+    <span class="admin-badge">⚙️ Администратор</span>
+    <button class="btn-logout" onclick="logout()">Выйти</button>
+  </div>
+</nav>
+
+<div class="layout">
+  <aside>
+    <div style="padding:1rem 1.5rem 1.2rem; border-bottom:1px solid var(--border);">
+      <div style="font-size:0.75rem; color:var(--muted); margin-bottom:0.3rem;">ПАНЕЛЬ УПРАВЛЕНИЯ</div>
+      <div style="font-size:0.95rem; font-weight:700;">TULPAR Admin</div>
+    </div>
+    <nav style="display:block; padding:1rem 0;">
+      <button class="side-nav-item active" onclick="showPage('dashboard', this)"><span class="icon">📊</span> Дашборд</button>
+      <button class="side-nav-item" onclick="showPage('partners', this)"><span class="icon">👥</span> Партнёры</button>
+      <button class="side-nav-item" onclick="showPage('products', this)"><span class="icon">📦</span> Товары</button>
+      <button class="side-nav-item" onclick="showPage('orders', this)"><span class="icon">🛒</span> Заказы</button>
+      <button class="side-nav-item" onclick="showPage('finances', this)"><span class="icon">💰</span> Финансы</button>
+      <button class="side-nav-item" onclick="showPage('telegram', this)"><span class="icon">✈️</span> Telegram</button>
+    </nav>
+  </aside>
+
+  <main>
+    <!-- DASHBOARD PAGE -->
+    <div class="page active" id="page-dashboard">
+      <h2>Дашборд</h2>
+      <p class="page-sub">Общая статистика по платформе</p>
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card"><div class="stat-label">Всего партнёров</div><div class="stat-value gold" id="st-total">—</div><div class="stat-sub">С начала</div></div>
+        <div class="stat-card"><div class="stat-label">Сегодня</div><div class="stat-value green" id="st-today">—</div><div class="stat-sub">Новых регистраций</div></div>
+        <div class="stat-card"><div class="stat-label">За 7 дней</div><div class="stat-value" id="st-week">—</div><div class="stat-sub">Новых партнёров</div></div>
+        <div class="stat-card"><div class="stat-label">Средний тариф</div><div class="stat-value" id="st-avg" style="font-size:1rem;">—</div><div class="stat-sub">По взносам</div></div>
+      </div>
+      <h3 style="font-size:1rem; font-weight:700; margin-bottom:1rem;">💰 Выручка от взносов</h3>
+      <div class="rev-grid">
+        <div class="rev-card"><div class="rev-label">СТАРТ (×15К ₸)</div><div class="rev-val" id="rev-start">—</div></div>
+        <div class="rev-card"><div class="rev-label">ПАРТНЁР (×50К ₸)</div><div class="rev-val" id="rev-partner">—</div></div>
+        <div class="rev-card"><div class="rev-label">ЛИДЕР (×150К ₸)</div><div class="rev-val" id="rev-leader">—</div></div>
+        <div class="rev-card" style="border-color:rgba(245,166,35,0.5);"><div class="rev-label">ИТОГО выручка</div><div class="rev-val" id="rev-total" style="font-size:1.5rem;">—</div></div>
+      </div>
+    </div>
+
+    <!-- PARTNERS PAGE -->
+    <div class="page" id="page-partners">
+      <h2>Партнёры</h2>
+      <p class="page-sub">Список всех зарегистрированных партнёров</p>
+      <div class="table-controls">
+        <input class="search-input" id="searchInput" placeholder="🔍 Поиск по имени, телефону, городу..." oninput="filterPartners()" />
+        <select class="filter-select" id="tariffFilter" onchange="filterPartners()">
+          <option value="">Все тарифы</option>
+          <option value="start">СТАРТ</option>
+          <option value="partner">ПАРТНЁР</option>
+          <option value="leader">ЛИДЕР</option>
+        </select>
+        <select class="filter-select" id="statusFilter" onchange="filterPartners()">
+          <option value="">Все статусы</option>
+          <option value="new">Новый</option>
+          <option value="active">Активный</option>
+          <option value="paid">Оплачен</option>
+          <option value="inactive">Неактивный</option>
+        </select>
+        <button class="btn-export" onclick="exportCSV()">⬇️ CSV</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th><th>Имя</th><th>Телефон</th><th>Город</th><th>Тариф</th><th>Реф.код</th><th>Статус</th><th>Дата</th><th>Действия</th>
+            </tr>
+          </thead>
+          <tbody id="partnersTable">
+            <tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--muted);">Загрузка...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination" id="pagination"></div>
+    </div>
+
+    <!-- PRODUCTS PAGE -->
+    <div class="page" id="page-products">
+      <h2>Товары</h2>
+      <p class="page-sub">Управление каталогом товаров</p>
+      <div style="margin-bottom:1.2rem;">
+        <button onclick="openProductModal()" style="background:var(--primary);color:#fff;border:none;padding:0.7rem 1.5rem;border-radius:10px;cursor:pointer;font-weight:700;font-size:0.9rem;">+ Добавить товар</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Фото</th><th>Название</th><th>Категория</th><th>Цена</th><th>В наличии</th><th>Действия</th></tr></thead>
+          <tbody id="productsTable"><tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--muted);">Загрузка...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ORDERS PAGE -->
+    <div class="page" id="page-orders">
+      <h2>Заказы</h2>
+      <p class="page-sub">Все заказы от покупателей</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Покупатель</th><th>Телефон</th><th>Товары</th><th>Сумма</th><th>Партнёр</th><th>Статус</th><th>Дата</th><th>Действие</th></tr></thead>
+          <tbody id="ordersTable"><tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--muted);">Загрузка...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- FINANCES PAGE -->
+    <div class="page" id="page-finances">
+      <h2>Финансы</h2>
+      <p class="page-sub">Доходы и аналитика</p>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Доход от пакетов (всего)</div>
+          <div class="stat-value gold" id="fin-packages-total">0 ₸</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Доход от заказов (всего)</div>
+          <div class="stat-value green" id="fin-orders-total">0 ₸</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Бонусы выплачено</div>
+          <div class="stat-value red" id="fin-bonuses">0 ₸</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Чистая прибыль</div>
+          <div class="stat-value gold" id="fin-profit" style="font-size:2.4rem;">0 ₸</div>
+        </div>
+      </div>
+
+      <div class="rev-grid">
+        <div class="rev-card">
+          <div class="rev-label">Пакеты сегодня</div>
+          <div class="rev-val" id="fin-pkg-today">0 ₸</div>
+        </div>
+        <div class="rev-card">
+          <div class="rev-label">Пакеты за неделю</div>
+          <div class="rev-val" id="fin-pkg-week">0 ₸</div>
+        </div>
+        <div class="rev-card">
+          <div class="rev-label">Заказы сегодня</div>
+          <div class="rev-val" id="fin-ord-today">0 ₸</div>
+        </div>
+        <div class="rev-card">
+          <div class="rev-label">Заказы за неделю</div>
+          <div class="rev-val" id="fin-ord-week">0 ₸</div>
+        </div>
+      </div>
+
+      <h3 style="margin-bottom:1rem;">Последние транзакции</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Партнёр</th>
+              <th>Тип</th>
+              <th>Сумма</th>
+              <th>Описание</th>
+              <th>Дата</th>
+            </tr>
+          </thead>
+          <tbody id="finTransTable">
+            <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted);">Загрузка...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TELEGRAM PAGE -->
+    <div class="page" id="page-telegram">
+      <h2>Telegram интеграция</h2>
+      <p class="page-sub">Настройки уведомлений в Telegram</p>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem;max-width:600px;">
+        <div style="margin-bottom:1.5rem;">
+          <div style="font-size:0.85rem;color:var(--muted);margin-bottom:0.8rem;font-weight:600;">Как настроить уведомления:</div>
+          <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:1rem;font-size:0.88rem;line-height:2;">
+            <div>1️⃣ Создайте бота через <a href="https://t.me/BotFather" target="_blank" style="color:var(--primary)">@BotFather</a> в Telegram</div>
+            <div>2️⃣ Получите токен вида <code style="background:rgba(255,255,255,0.1);padding:0.1rem 0.4rem;border-radius:4px;">123456:ABC...</code></div>
+            <div>3️⃣ Узнайте свой Chat ID через <a href="https://t.me/userinfobot" target="_blank" style="color:var(--primary)">@userinfobot</a></div>
+            <div>4️⃣ Вставьте значения в файл <code style="background:rgba(255,255,255,0.1);padding:0.1rem 0.4rem;border-radius:4px;">.env</code></div>
+            <div>5️⃣ Перезапустите сервер</div>
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:1rem;font-family:monospace;font-size:0.85rem;color:var(--gold);">
+          TELEGRAM_BOT_TOKEN=1234567890:AAxxxxxxxxxx<br/>
+          TELEGRAM_ADMIN_CHAT_ID=987654321
+        </div>
+        <div style="margin-top:1.5rem; font-size:0.88rem; color:var(--muted);">
+          После настройки каждый новый партнёр будет отправлять уведомление с именем, телефоном, городом и выбранным тарифом прямо в ваш Telegram.
+        </div>
+        <button onclick="testTelegram()" style="margin-top:1.2rem;background:rgba(41,128,185,0.2);border:1px solid rgba(41,128,185,0.4);color:#5DADE2;padding:0.7rem 1.5rem;border-radius:10px;cursor:pointer;font-weight:600;">
+          📱 Отправить тестовое сообщение
+        </button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- PRODUCT MODAL -->
+<div class="modal-overlay" id="productModal">
+  <div class="modal">
+    <h3 id="prodModalTitle">📦 Добавить товар</h3>
+    <input type="hidden" id="prodEditId" value="" />
+    <div style="margin-bottom:1rem;">
+      <div style="font-size:0.85rem;color:var(--muted);margin-bottom:0.4rem;">Название *</div>
+      <input id="prodName" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;padding:0.6rem;color:var(--white);font-size:0.9rem;" placeholder="Витамин С Premium" />
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+      <div>
+        <div style="font-size:0.85rem;color:var(--muted);margin-bottom:0.4rem;">Цена (₸) *</div>
+        <input id="prodPrice" type="number" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;padding:0.6rem;color:var(--white);font-size:0.9rem;" placeholder="3200" />
+      </div>
+      <div>
+        <div style="font-size:0.85rem;color:var(--muted);margin-bottom:0.4rem;">Категория</div>
+        <select id="prodCategory" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;padding:0.6rem;color:var(--white);font-size:0.9rem;">
+          <option value="0">Без категории</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-bottom:1rem;">
+      <div style="font-size:0.85rem;color:var(--muted);margin-bottom:0.4rem;">Описание</div>
+      <textarea id="prodDesc" rows="2" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;padding:0.6rem;color:var(--white);font-size:0.9rem;resize:vertical;" placeholder="Краткое описание товара"></textarea>
+    </div>
+    <div style="margin-bottom:1rem;">
+      <div style="font-size:0.85rem;color:var(--muted);margin-bottom:0.4rem;">URL фото</div>
+      <input id="prodImage" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;padding:0.6rem;color:var(--white);font-size:0.9rem;" placeholder="https://example.com/photo.jpg" />
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeProductModal()">Отмена</button>
+      <button class="btn-save" onclick="saveProduct()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <h3>✏️ Редактировать партнёра</h3>
+    <div class="modal-body" id="modalBody"></div>
+    <div style="margin-bottom:1rem;">
+      <div style="font-size:0.85rem;color:var(--muted);margin-bottom:0.5rem;">Статус:</div>
+      <select class="status-select" id="statusSelect">
+        <option value="new">🟡 Новый</option>
+        <option value="active">🟢 Активный</option>
+        <option value="paid">🟢 Оплачен</option>
+        <option value="inactive">🔴 Неактивный</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Отмена</button>
+      <button class="btn-save" onclick="savePartner()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const token = () => localStorage.getItem('tulpar_admin_token');
+  let allPartners = [];
+  let editingId = null;
+  const PAGE_SIZE = 20;
+  let currentPage = 1;
+
+  async function api(path, opts={}) {
+    const res = await fetch(path, { ...opts, headers: { 'Content-Type':'application/json', Authorization:'Bearer '+token(), ...opts.headers } });
+    if (res.status === 401 || res.status === 403) { localStorage.removeItem('tulpar_admin_token'); location.href='/login'; return null; }
+    return res.json();
+  }
+
+  async function loadStats() {
+    const data = await api('/api/admin/stats');
+    if (!data) return;
+    document.getElementById('st-total').textContent = data.total;
+    document.getElementById('st-today').textContent = data.today;
+    document.getElementById('st-week').textContent = data.week;
+    const avg = data.revenue.total / (data.total || 1);
+    document.getElementById('st-avg').textContent = Math.round(avg).toLocaleString('ru') + ' ₸';
+    document.getElementById('rev-start').textContent = (data.revenue.start/1000000).toFixed(1) + ' млн ₸';
+    document.getElementById('rev-partner').textContent = (data.revenue.partner/1000000).toFixed(1) + ' млн ₸';
+    document.getElementById('rev-leader').textContent = (data.revenue.leader/1000000).toFixed(1) + ' млн ₸';
+    document.getElementById('rev-total').textContent = (data.revenue.total/1000000).toFixed(2) + ' млн ₸';
+  }
+
+  async function loadPartners() {
+    allPartners = await api('/api/admin/partners') || [];
+    renderTable(allPartners);
+  }
+
+  function filterPartners() {
+    const s = document.getElementById('searchInput').value.toLowerCase();
+    const t = document.getElementById('tariffFilter').value;
+    const st = document.getElementById('statusFilter').value;
+    const filtered = allPartners.filter(p =>
+      (!s || p.name.toLowerCase().includes(s) || p.phone.includes(s) || (p.city||'').toLowerCase().includes(s)) &&
+      (!t || p.tariff === t) && (!st || p.status === st)
+    );
+    currentPage = 1;
+    renderTable(filtered);
+  }
+
+  function renderTable(partners) {
+    const tbody = document.getElementById('partnersTable');
+    const TARIFF = { start:'<span class="tariff-tag start">⚡ СТАРТ</span>', partner:'<span class="tariff-tag partner">🚀 ПАРТНЁР</span>', leader:'<span class="tariff-tag leader">👑 ЛИДЕР</span>' };
+    const STATUS = { new:'<span class="status-tag new">Новый</span>', active:'<span class="status-tag active">Активный</span>', paid:'<span class="status-tag paid">Оплачен</span>', inactive:'<span class="status-tag inactive">Неактивный</span>' };
+    const start = (currentPage-1)*PAGE_SIZE, end = start+PAGE_SIZE;
+    const paged = partners.slice(start, end);
+    if (!paged.length) { tbody.innerHTML='<tr class="empty-row"><td colspan="9">Партнёры не найдены</td></tr>'; renderPagination(0); return; }
+    tbody.innerHTML = paged.map(p=>`
+      <tr>
+        <td style="color:var(--muted)">#${p.id}</td>
+        <td style="font-weight:600">${p.name}</td>
+        <td>+${p.phone}</td>
+        <td>${p.city||'—'}</td>
+        <td>${TARIFF[p.tariff]||p.tariff}</td>
+        <td style="color:var(--gold);letter-spacing:1px;font-weight:700">${p.ref_code}</td>
+        <td>${STATUS[p.status]||p.status}</td>
+        <td style="color:var(--muted)">${new Date(p.created_at).toLocaleDateString('ru-RU')}</td>
+        <td><div class="actions">
+          <button class="btn-sm btn-status" onclick="openEdit(${p.id})">✏️</button>
+          <button class="btn-sm btn-del" onclick="deletePartner(${p.id},'${p.name}')">🗑</button>
+        </div></td>
+      </tr>`).join('');
+    renderPagination(partners.length);
+  }
+
+  function renderPagination(total) {
+    const totalPages = Math.ceil(total/PAGE_SIZE);
+    const pg = document.getElementById('pagination');
+    if (totalPages <= 1) { pg.innerHTML=''; return; }
+    pg.innerHTML = Array.from({length:totalPages},(_,i)=>
+      `<button class="pg-btn ${i+1===currentPage?'active':''}" onclick="goPage(${i+1})">${i+1}</button>`).join('');
+  }
+
+  function goPage(p) { currentPage=p; filterPartners(); }
+
+  function openEdit(id) {
+    const p = allPartners.find(x=>x.id===id);
+    if (!p) return;
+    editingId = id;
+    document.getElementById('modalBody').innerHTML = `
+      <div class="info-row"><span class="info-label">Имя</span><span class="info-val">${p.name}</span></div>
+      <div class="info-row"><span class="info-label">Телефон</span><span class="info-val">+${p.phone}</span></div>
+      <div class="info-row"><span class="info-label">Тариф</span><span class="info-val">${p.tariff}</span></div>
+      <div class="info-row"><span class="info-label">Реф.код</span><span class="info-val" style="color:var(--gold)">${p.ref_code}</span></div>`;
+    document.getElementById('statusSelect').value = p.status || 'new';
+    document.getElementById('editModal').classList.add('open');
+  }
+
+  function closeModal() { document.getElementById('editModal').classList.remove('open'); editingId=null; }
+
+  async function savePartner() {
+    const status = document.getElementById('statusSelect').value;
+    await api(`/api/admin/partner/${editingId}`, { method:'PATCH', body:JSON.stringify({status}) });
+    closeModal(); toast('Статус обновлён', 'success'); await loadPartners(); await loadStats();
+  }
+
+  async function deletePartner(id, name) {
+    if (!confirm(`Удалить партнёра "${name}"?`)) return;
+    await api(`/api/admin/partner/${id}`, { method:'DELETE' });
+    toast('Партнёр удалён', 'success'); await loadPartners(); await loadStats();
+  }
+
+  async function exportCSV() { location.href = '/api/admin/export?t=' + token(); }
+
+  async function testTelegram() {
+    toast('Тестовое сообщение отправлено (если бот настроен)', 'success');
+  }
+
+  function showPage(name, btn) {
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.side-nav-item').forEach(b=>b.classList.remove('active'));
+    document.getElementById('page-'+name).classList.add('active');
+    if (btn) btn.classList.add('active');
+    if (name==='partners') loadPartners();
+    if (name==='products') loadProducts();
+    if (name==='orders') loadOrders();
+    if (name==='finances') loadFinances();
+  }
+
+  function toast(msg, type='success') {
+    const el=document.createElement('div'); el.className=`toast ${type}`; el.textContent=msg;
+    document.body.appendChild(el); setTimeout(()=>el.remove(),3000);
+  }
+
+  function logout() { localStorage.removeItem('tulpar_admin_token'); location.href='/'; }
+
+  // ─── PRODUCTS ─────────────────────────────────────────────
+  let allProducts = [];
+  let catList = [];
+
+  async function loadProducts() {
+    const [prods, cats] = await Promise.all([api('/api/admin/products'), fetch('/api/categories').then(r=>r.json())]);
+    allProducts = prods || [];
+    catList = cats || [];
+    renderProductsTable();
+    // Fill category select
+    const sel = document.getElementById('prodCategory');
+    sel.innerHTML = '<option value="0">Без категории</option>' + catList.map(c=>`<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
+  }
+
+  function renderProductsTable() {
+    const tbody = document.getElementById('productsTable');
+    const catMap = {};
+    catList.forEach(c => catMap[c.id] = c);
+    if (!allProducts.length) { tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--muted);">Нет товаров. Добавьте первый!</td></tr>'; return; }
+    tbody.innerHTML = allProducts.map(p => {
+      const cat = catMap[p.category_id];
+      return `<tr>
+        <td style="color:var(--muted)">#${p.id}</td>
+        <td>${p.image_url ? `<img src="${p.image_url}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;" onerror="this.outerHTML='📦'" />` : '📦'}</td>
+        <td style="font-weight:600">${p.name}</td>
+        <td>${cat ? cat.icon+' '+cat.name : '—'}</td>
+        <td style="color:var(--gold);font-weight:700">${p.price.toLocaleString('ru')} ₸</td>
+        <td>${p.in_stock ? '<span style="color:var(--green)">Да</span>' : '<span style="color:var(--muted)">Нет</span>'}</td>
+        <td><div class="actions">
+          <button class="btn-sm btn-status" onclick="editProduct(${p.id})">✏️</button>
+          <button class="btn-sm btn-del" onclick="deleteProduct(${p.id},'${p.name.replace(/'/g,"\\'")}')">🗑</button>
+        </div></td>
+      </tr>`;
+    }).join('');
+  }
+
+  function openProductModal(product) {
+    document.getElementById('prodEditId').value = product ? product.id : '';
+    document.getElementById('prodModalTitle').textContent = product ? '✏️ Редактировать товар' : '📦 Добавить товар';
+    document.getElementById('prodName').value = product ? product.name : '';
+    document.getElementById('prodPrice').value = product ? product.price : '';
+    document.getElementById('prodCategory').value = product ? product.category_id : '0';
+    document.getElementById('prodDesc').value = product ? product.description : '';
+    document.getElementById('prodImage').value = product ? product.image_url : '';
+    document.getElementById('productModal').classList.add('open');
+  }
+
+  function closeProductModal() { document.getElementById('productModal').classList.remove('open'); }
+
+  function editProduct(id) {
+    const p = allProducts.find(x => x.id === id);
+    if (p) openProductModal(p);
+  }
+
+  async function saveProduct() {
+    const editId = document.getElementById('prodEditId').value;
+    const data = {
+      name: document.getElementById('prodName').value.trim(),
+      price: parseInt(document.getElementById('prodPrice').value) || 0,
+      category_id: parseInt(document.getElementById('prodCategory').value) || 0,
+      description: document.getElementById('prodDesc').value.trim(),
+      image_url: document.getElementById('prodImage').value.trim(),
+    };
+    if (!data.name || !data.price) return toast('Укажите название и цену', 'error');
+
+    if (editId) {
+      await api(`/api/admin/products/${editId}`, { method:'PATCH', body:JSON.stringify(data) });
+    } else {
+      await api('/api/admin/products', { method:'POST', body:JSON.stringify(data) });
+    }
+    closeProductModal();
+    toast(editId ? 'Товар обновлён' : 'Товар добавлен');
+    await loadProducts();
+  }
+
+  async function deleteProduct(id, name) {
+    if (!confirm(`Удалить товар "${name}"?`)) return;
+    await api(`/api/admin/products/${id}`, { method:'DELETE' });
+    toast('Товар удалён'); await loadProducts();
+  }
+
+  // ─── ORDERS ───────────────────────────────────────────────
+  const ORDER_STATUS = { new:'<span class="status-tag new">Новый</span>', processing:'<span class="status-tag active">В обработке</span>', shipped:'<span class="status-tag paid">Отправлен</span>', delivered:'<span class="status-tag active">Доставлен</span>', cancelled:'<span class="status-tag inactive">Отменён</span>' };
+
+  async function loadOrders() {
+    const orders = await api('/api/admin/orders') || [];
+    const tbody = document.getElementById('ordersTable');
+    if (!orders.length) { tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--muted);">Заказов пока нет</td></tr>'; return; }
+    tbody.innerHTML = orders.map(o => `<tr>
+      <td style="color:var(--muted)">#${o.id}</td>
+      <td style="font-weight:600">${o.customer_name}</td>
+      <td>+${o.customer_phone}</td>
+      <td style="font-size:0.8rem">${(o.items||[]).map(i=>`${i.product_name} x${i.quantity}`).join(', ')}</td>
+      <td style="color:var(--gold);font-weight:700">${o.total.toLocaleString('ru')} ₸</td>
+      <td style="color:var(--muted)">${o.partner_ref || '—'}</td>
+      <td>${ORDER_STATUS[o.status] || o.status}</td>
+      <td style="color:var(--muted)">${new Date(o.created_at).toLocaleDateString('ru-RU')}</td>
+      <td><select onchange="updateOrderStatus(${o.id}, this.value)" style="background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:6px;padding:0.3rem;color:var(--white);font-size:0.8rem;">
+        <option value="new" ${o.status==='new'?'selected':''}>Новый</option>
+        <option value="processing" ${o.status==='processing'?'selected':''}>В обработке</option>
+        <option value="shipped" ${o.status==='shipped'?'selected':''}>Отправлен</option>
+        <option value="delivered" ${o.status==='delivered'?'selected':''}>Доставлен</option>
+        <option value="cancelled" ${o.status==='cancelled'?'selected':''}>Отменён</option>
+      </select></td>
+    </tr>`).join('');
+  }
+
+  async function updateOrderStatus(id, status) {
+    await api(`/api/admin/orders/${id}`, { method:'PATCH', body:JSON.stringify({status}) });
+    toast('Статус обновлён'); await loadOrders();
+  }
+
+  // ─── FINANCES ─────────────────────────────────────────────
+  const finTypeMap = {
+    package_purchase: { label:'📦 Покупка пакета', color:'var(--green)' },
+    ref_bonus_l1:    { label:'💰 Бонус 1 ур.',    color:'var(--gold)' },
+    ref_bonus_l2:    { label:'💰 Бонус 2 ур.',    color:'var(--gold)' },
+    order_commission: { label:'🛒 Комиссия',       color:'#5DADE2' }
+  };
+  function fmtMoney(v) { return (v||0).toLocaleString('ru') + ' ₸'; }
+
+  async function loadFinances() {
+    const [fin, txns] = await Promise.all([
+      api('/api/admin/finances'),
+      api('/api/admin/transactions')
+    ]);
+
+    if (fin) {
+      const pkgTotal  = fin.packages?.total  || 0;
+      const ordTotal  = fin.orders_income?.total  || 0;
+      const bonTotal  = fin.bonuses_paid?.total || 0;
+      const profit    = pkgTotal + ordTotal - bonTotal;
+
+      document.getElementById('fin-packages-total').textContent = fmtMoney(pkgTotal);
+      document.getElementById('fin-orders-total').textContent   = fmtMoney(ordTotal);
+      document.getElementById('fin-bonuses').textContent        = fmtMoney(bonTotal);
+      document.getElementById('fin-profit').textContent         = fmtMoney(profit);
+
+      document.getElementById('fin-pkg-today').textContent = fmtMoney(fin.packages?.today || 0);
+      document.getElementById('fin-pkg-week').textContent  = fmtMoney(fin.packages?.week  || 0);
+      document.getElementById('fin-ord-today').textContent = fmtMoney(fin.orders_income?.today || 0);
+      document.getElementById('fin-ord-week').textContent  = fmtMoney(fin.orders_income?.week  || 0);
+    }
+
+    const rows = Array.isArray(txns) ? txns : [];
+    document.getElementById('finTransTable').innerHTML = rows.length ? rows.map((t,i)=>{
+      const info = finTypeMap[t.type] || { label:t.type, color:'var(--muted)' };
+      return `<tr>
+        <td>${i+1}</td>
+        <td>${t.partner_name||'—'}</td>
+        <td style="color:${info.color};font-weight:600;">${info.label}</td>
+        <td style="font-weight:700;">${fmtMoney(t.amount)}</td>
+        <td>${t.description||'—'}</td>
+        <td>${t.created_at ? new Date(t.created_at).toLocaleDateString('ru') : '—'}</td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted);">Нет транзакций</td></tr>';
+  }
+
+  // Init
+  if (!token()) location.href='/login';
+  else { loadStats(); loadPartners(); }
+</script>
+</body>
+</html>

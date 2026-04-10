@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TULPAR — Личный кабинет</title>
+  <style>
+    :root { --primary:#D4213D; --gold:#F5A623; --dark:#0D0D1A; --dark2:#1A1A2E; --card:#1E2A45; --border:rgba(255,255,255,0.1); --muted:#A0A8C0; --green:#27AE60; --white:#FFFFFF; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--dark); color:var(--white); }
+    /* NAV */
+    nav { background:rgba(13,13,26,0.98); border-bottom:1px solid var(--border); padding:0 5%; display:flex; align-items:center; justify-content:space-between; height:64px; position:sticky; top:0; z-index:10; }
+    .nav-logo { font-size:1.5rem; font-weight:900; background:linear-gradient(90deg,#FF4D6A,#F5A623); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .nav-logo span { -webkit-text-fill-color:var(--white); }
+    .nav-right { display:flex; align-items:center; gap:1rem; }
+    .partner-badge { background:rgba(212,33,61,0.2); border:1px solid rgba(212,33,61,0.4); border-radius:20px; padding:0.3rem 0.9rem; font-size:0.8rem; color:#FF8FA0; }
+    .btn-logout { background:none; border:1px solid var(--border); color:var(--muted); padding:0.4rem 0.8rem; border-radius:8px; cursor:pointer; font-size:0.85rem; }
+    .btn-logout:hover { color:var(--white); border-color:var(--primary); }
+    /* LAYOUT */
+    .layout { display:grid; grid-template-columns:240px 1fr; min-height:calc(100vh - 64px); }
+    /* SIDEBAR */
+    aside { background:var(--dark2); border-right:1px solid var(--border); padding:1.5rem 0; }
+    .partner-info { padding:0 1.5rem 1.5rem; border-bottom:1px solid var(--border); }
+    .partner-avatar { width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,var(--primary),var(--gold)); display:flex; align-items:center; justify-content:center; font-size:1.5rem; font-weight:900; margin-bottom:0.8rem; }
+    .partner-name { font-size:1rem; font-weight:700; }
+    .partner-meta { font-size:0.8rem; color:var(--muted); margin-top:0.2rem; }
+    .tariff-badge { display:inline-block; margin-top:0.5rem; padding:0.25rem 0.7rem; border-radius:20px; font-size:0.75rem; font-weight:700; background:rgba(245,166,35,0.2); color:var(--gold); border:1px solid rgba(245,166,35,0.4); }
+    nav.side-nav { display:block; padding:1.5rem 0 0; border:none; height:auto; background:none; }
+    .side-nav-item { display:flex; align-items:center; gap:0.7rem; padding:0.8rem 1.5rem; color:var(--muted); text-decoration:none; font-size:0.9rem; transition:all 0.2s; cursor:pointer; border:none; background:none; width:100%; text-align:left; }
+    .side-nav-item:hover { background:rgba(255,255,255,0.05); color:var(--white); }
+    .side-nav-item.active { background:rgba(212,33,61,0.12); color:var(--white); border-right:3px solid var(--primary); }
+    .side-nav-item .icon { font-size:1.1rem; }
+    /* MAIN */
+    main { padding:2rem 2.5rem; overflow-y:auto; }
+    .page { display:none; }
+    .page.active { display:block; }
+    h2 { font-size:1.5rem; font-weight:900; margin-bottom:0.3rem; }
+    .page-sub { color:var(--muted); font-size:0.9rem; margin-bottom:2rem; }
+    /* STAT CARDS */
+    .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:2rem; }
+    .stat-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:1.3rem; }
+    .stat-label { font-size:0.78rem; color:var(--muted); margin-bottom:0.5rem; }
+    .stat-value { font-size:1.8rem; font-weight:900; }
+    .stat-value.gold { color:var(--gold); }
+    .stat-value.green { color:var(--green); }
+    .stat-sub { font-size:0.75rem; color:var(--muted); margin-top:0.3rem; }
+    /* REF CARD */
+    .ref-card { background:linear-gradient(135deg,rgba(212,33,61,0.12),rgba(245,166,35,0.06)); border:1px solid rgba(245,166,35,0.3); border-radius:16px; padding:1.5rem; margin-bottom:2rem; }
+    .ref-title { font-size:0.85rem; color:var(--muted); margin-bottom:0.8rem; font-weight:600; }
+    .ref-code-wrap { display:flex; align-items:center; gap:1rem; flex-wrap:wrap; }
+    .ref-code { font-size:2rem; font-weight:900; color:var(--gold); letter-spacing:3px; }
+    .copy-btn { background:rgba(245,166,35,0.15); border:1px solid rgba(245,166,35,0.4); color:var(--gold); padding:0.5rem 1rem; border-radius:8px; cursor:pointer; font-size:0.85rem; font-weight:600; transition:all 0.2s; }
+    .copy-btn:hover { background:rgba(245,166,35,0.25); }
+    .ref-link-wrap { display:flex; align-items:center; gap:0.8rem; margin-top:0.8rem; flex-wrap:wrap; }
+    .ref-link { font-size:0.85rem; color:var(--muted); background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:8px; padding:0.5rem 1rem; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    /* COMMISSION TABLE */
+    .section-title { font-size:1rem; font-weight:700; margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem; }
+    .comm-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-bottom:2rem; }
+    .comm-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.2rem; text-align:center; }
+    .comm-pct { font-size:2rem; font-weight:900; color:var(--gold); }
+    .comm-label { font-size:0.8rem; color:var(--muted); margin-top:0.3rem; }
+    /* INFO ROWS */
+    .info-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:1.5rem; margin-bottom:1.5rem; }
+    .info-row { display:flex; justify-content:space-between; padding:0.7rem 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:0.9rem; }
+    .info-row:last-child { border-bottom:none; }
+    .info-label { color:var(--muted); }
+    .info-val { font-weight:600; }
+    /* TOAST */
+    .toast { position:fixed; top:80px; right:20px; padding:1rem 1.5rem; border-radius:12px; font-weight:600; z-index:100; animation:slideIn 0.3s; }
+    .toast.success { background:#1a3d2b; border:1px solid var(--green); color:var(--green); }
+    @keyframes slideIn { from{transform:translateX(100%);opacity:0} to{transform:translateX(0);opacity:1} }
+    .loading { text-align:center; padding:3rem; color:var(--muted); }
+    /* TARIFF UPGRADE */
+    .upgrade-card { background:linear-gradient(135deg,rgba(212,33,61,0.1),rgba(26,26,46,0.9)); border:1px solid var(--primary); border-radius:16px; padding:1.5rem; margin-bottom:1.5rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap; }
+    .upgrade-text h3 { font-size:1.1rem; font-weight:700; margin-bottom:0.3rem; }
+    .upgrade-text p { font-size:0.85rem; color:var(--muted); }
+    .upgrade-btn { background:linear-gradient(135deg,var(--primary),#7B1FA2); color:#fff; border:none; padding:0.7rem 1.5rem; border-radius:10px; font-weight:700; cursor:pointer; white-space:nowrap; }
+    /* TARIFF CARDS */
+    .tariff-cards-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1.5rem; margin-bottom:2rem; }
+    .tariff-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:2rem 1.5rem; text-align:center; transition:all 0.3s; }
+    .tariff-card:hover { border-color:var(--gold); transform:translateY(-4px); }
+    .tariff-card .tariff-card-name { font-size:1.3rem; font-weight:900; margin-bottom:0.5rem; }
+    .tariff-card .tariff-card-price { font-size:2rem; font-weight:900; color:var(--gold); margin-bottom:1rem; }
+    .tariff-card .tariff-card-features { font-size:0.85rem; color:var(--muted); line-height:2; margin-bottom:1.5rem; }
+    .tariff-card .btn-buy { background:linear-gradient(135deg,var(--primary),#7B1FA2); color:#fff; border:none; padding:0.75rem 2rem; border-radius:10px; font-weight:700; cursor:pointer; font-size:0.95rem; width:100%; }
+    .tariff-card .btn-buy:hover { opacity:0.9; }
+    .tariff-card.current-tariff { border-color:var(--green); }
+    .tariff-card.current-tariff .btn-buy { background:var(--green); cursor:default; }
+    .free-banner { background:linear-gradient(135deg,rgba(245,166,35,0.15),rgba(212,33,61,0.1)); border:1px solid rgba(245,166,35,0.4); border-radius:16px; padding:1.5rem; margin-bottom:2rem; display:flex; align-items:center; gap:1rem; flex-wrap:wrap; }
+    .free-banner .free-banner-text h3 { font-size:1rem; font-weight:700; color:var(--gold); margin-bottom:0.3rem; }
+    .free-banner .free-banner-text p { font-size:0.85rem; color:var(--muted); }
+    .free-banner .btn-buy-banner { background:linear-gradient(135deg,var(--gold),#e6951f); color:#fff; border:none; padding:0.6rem 1.2rem; border-radius:10px; font-weight:700; cursor:pointer; font-size:0.85rem; white-space:nowrap; }
+    /* HISTORY */
+    .tx-list { list-style:none; }
+    .tx-item { display:flex; justify-content:space-between; align-items:center; padding:0.9rem 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:0.9rem; }
+    .tx-item:last-child { border-bottom:none; }
+    .tx-amount.positive { color:var(--green); font-weight:700; }
+    .tx-amount.negative { color:#FF8FA0; font-weight:700; }
+    .tx-desc { color:var(--muted); font-size:0.8rem; margin-top:0.2rem; }
+    @media(max-width:800px) { .layout{grid-template-columns:1fr}; aside{display:none}; .stats-grid{grid-template-columns:1fr 1fr}; .comm-grid{grid-template-columns:1fr}; .tariff-cards-grid{grid-template-columns:1fr}; }
+    /* CARDS PAGE */
+    .templates-row { display:flex; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap; }
+    .tpl-btn { flex:1; min-width:140px; background:var(--card); border:2px solid var(--border); border-radius:12px; padding:1rem; cursor:pointer; text-align:center; transition:all 0.2s; color:var(--white); }
+    .tpl-btn:hover, .tpl-btn.selected { border-color:var(--primary); background:rgba(212,33,61,0.12); }
+    .tpl-btn .tpl-icon { font-size:2rem; display:block; margin-bottom:0.4rem; }
+    .tpl-btn .tpl-name { font-size:0.85rem; font-weight:700; }
+    .canvas-wrap { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:1.5rem; display:flex; flex-direction:column; align-items:center; gap:1rem; }
+    #cardCanvas { border-radius:12px; max-width:100%; box-shadow:0 8px 32px rgba(0,0,0,0.5); }
+    .card-actions { display:flex; gap:1rem; flex-wrap:wrap; justify-content:center; }
+    .btn-download { background:linear-gradient(135deg,var(--primary),#7B1FA2); color:#fff; border:none; padding:0.75rem 2rem; border-radius:10px; font-weight:700; cursor:pointer; font-size:0.95rem; }
+    .btn-tg { background:linear-gradient(135deg,#2AABEE,#1a8cc0); color:#fff; border:none; padding:0.75rem 2rem; border-radius:10px; font-weight:700; cursor:pointer; font-size:0.95rem; }
+    .msg-box { width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:10px; padding:1rem; font-size:0.85rem; line-height:1.7; color:var(--white); font-family:inherit; resize:none; }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+<nav>
+  <a href="/" class="nav-logo">TUL<span>PAR</span></a>
+  <div class="nav-right">
+    <span class="partner-badge" id="navTariff">—</span>
+    <span id="navName" style="font-size:0.9rem; color:var(--muted);">Загрузка...</span>
+    <button class="btn-logout" onclick="logout()">Выйти</button>
+  </div>
+</nav>
+
+<div class="layout">
+  <aside>
+    <div class="partner-info">
+      <div class="partner-avatar" id="sideAvatar">?</div>
+      <div class="partner-name" id="sideName">Загрузка...</div>
+      <div class="partner-meta" id="sidePhone">—</div>
+      <div class="tariff-badge" id="sideTariff">—</div>
+    </div>
+    <nav class="side-nav">
+      <button class="side-nav-item active" onclick="showPage('overview')"><span class="icon">📊</span> Обзор</button>
+      <button class="side-nav-item" onclick="showPage('tariff')"><span class="icon">💎</span> Тариф</button>
+      <button class="side-nav-item" onclick="showPage('reflink')"><span class="icon">🔗</span> Реф. ссылка</button>
+      <button class="side-nav-item" onclick="showPage('income')"><span class="icon">💰</span> Мой доход</button>
+      <button class="side-nav-item" onclick="showPage('cards')"><span class="icon">🎨</span> Карточки</button>
+      <button class="side-nav-item" onclick="showPage('profile')"><span class="icon">👤</span> Профиль</button>
+      <button class="side-nav-item" onclick="showPage('history')"><span class="icon">📋</span> История</button>
+    </nav>
+  </aside>
+
+  <main>
+    <div class="loading" id="loadingScreen">🦅 Загрузка данных...</div>
+
+    <!-- TARIFF -->
+    <div class="page" id="page-tariff">
+      <h2>Тарифные планы 💎</h2>
+      <p class="page-sub">Выберите подходящий тариф и начните зарабатывать</p>
+      <div id="tariffContent">Загрузка...</div>
+    </div>
+
+    <!-- OVERVIEW -->
+    <div class="page" id="page-overview">
+      <h2>Добро пожаловать! 👋</h2>
+      <p class="page-sub">Ваш личный кабинет партнёра TULPAR</p>
+
+      <div id="freeBannerWrap"></div>
+
+      <div class="stats-grid" style="grid-template-columns:1fr;margin-bottom:1rem;">
+        <div class="stat-card">
+          <div class="stat-label">Баланс</div>
+          <div class="stat-value gold" id="statBalance">0 ₸</div>
+          <div class="stat-sub">Ваш текущий баланс</div>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Реферальный код</div>
+          <div class="stat-value gold" id="statRefCode" style="font-size:1.2rem; letter-spacing:2px;">—</div>
+          <div class="stat-sub">Ваш уникальный код</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Тариф</div>
+          <div class="stat-value" id="statTariff">—</div>
+          <div class="stat-sub">Текущий уровень</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Партнёров в команде</div>
+          <div class="stat-value green" id="statTeam">0</div>
+          <div class="stat-sub">Пригласили по вашей ссылке</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Статус заявки</div>
+          <div class="stat-value" id="statStatus" style="font-size:1rem;">—</div>
+          <div class="stat-sub">Текущий статус</div>
+        </div>
+      </div>
+
+      <div class="ref-card">
+        <div class="ref-title">🔗 Ваша реферальная ссылка</div>
+        <div class="ref-code-wrap">
+          <div class="ref-code" id="bigRefCode">—</div>
+          <button class="copy-btn" onclick="copyCode()">Скопировать код</button>
+        </div>
+        <div class="ref-link-wrap">
+          <div class="ref-link" id="refLinkText">—</div>
+          <button class="copy-btn" onclick="copyLink()">Скопировать ссылку</button>
+        </div>
+        <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,0.1);">
+          <div style="font-size:0.85rem;color:var(--muted);margin-bottom:0.5rem;">🛒 Ссылка на каталог с вашим кодом:</div>
+          <div class="ref-link" id="catalogLinkText">—</div>
+          <button class="copy-btn" style="margin-top:0.5rem;" onclick="copyCatalogLink()">Скопировать ссылку на каталог</button>
+        </div>
+      </div>
+
+      <div class="stats-grid" style="grid-template-columns:1fr 1fr;margin-bottom:2rem;">
+        <div class="stat-card">
+          <div class="stat-label">Заказов по вашей ссылке</div>
+          <div class="stat-value green" id="statOrders">0</div>
+          <div class="stat-sub">Всего оформлено</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Сумма заказов</div>
+          <div class="stat-value gold" id="statOrdersTotal">0 ₸</div>
+          <div class="stat-sub">Общая выручка</div>
+        </div>
+      </div>
+
+      <div class="section-title">💰 Ваши комиссионные</div>
+      <div class="comm-grid" id="commGrid">
+        <div class="comm-card"><div class="comm-pct">—</div><div class="comm-label">Личные продажи</div></div>
+        <div class="comm-card"><div class="comm-pct">—</div><div class="comm-label">Команда 1 ур.</div></div>
+        <div class="comm-card"><div class="comm-pct">—</div><div class="comm-label">Команда 2 ур.</div></div>
+      </div>
+    </div>
+
+    <!-- REF LINK -->
+    <div class="page" id="page-reflink">
+      <h2>Реферальная ссылка</h2>
+      <p class="page-sub">Поделитесь этими данными, чтобы пригласить новых партнёров</p>
+      <div class="ref-card">
+        <div class="ref-title">Ваш персональный код</div>
+        <div style="font-size:2.5rem; font-weight:900; color:var(--gold); letter-spacing:4px; margin:0.5rem 0;" id="refCode2">—</div>
+        <button class="copy-btn" onclick="copyCode()">📋 Скопировать код</button>
+      </div>
+      <div class="info-card">
+        <div class="section-title">📲 Готовые сообщения для Telegram/WhatsApp</div>
+        <div class="info-row">
+          <div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:0.5rem;">Короткое сообщение:</div>
+            <div style="font-size:0.9rem; background:rgba(255,255,255,0.05); border-radius:8px; padding:0.8rem; line-height:1.6;" id="shortMsg">Загрузка...</div>
+          </div>
+        </div>
+        <button class="copy-btn" style="margin-top:0.8rem;" onclick="copyMsg('short')">Скопировать</button>
+      </div>
+      <div class="info-card">
+        <div class="section-title">📊 Как работает реферальная система</div>
+        <div class="info-row"><span class="info-label">Кто-то регистрируется по вашей ссылке</span><span class="info-val">🎯 Они в вашей команде 1 ур.</span></div>
+        <div class="info-row"><span class="info-label">Ваша комиссия с их продаж</span><span class="info-val" id="refComm1">3%</span></div>
+        <div class="info-row"><span class="info-label">Комиссия с команды 2-го уровня</span><span class="info-val" id="refComm2">1%</span></div>
+        <div class="info-row"><span class="info-label">Пассивный доход (автоматически)</span><span class="info-val">✅ Начисляется еженедельно</span></div>
+      </div>
+    </div>
+
+    <!-- INCOME -->
+    <div class="page" id="page-income">
+      <h2>Мой доход</h2>
+      <p class="page-sub">Потенциальный доход на вашем тарифе</p>
+      <div class="info-card">
+        <div class="section-title">📊 Пример расчёта дохода за месяц</div>
+        <div id="incomeCalc">Загрузка...</div>
+      </div>
+      <div class="info-card">
+        <div class="section-title">💳 Выплаты</div>
+        <div class="info-row"><span class="info-label">График выплат</span><span class="info-val">Каждую пятницу</span></div>
+        <div class="info-row"><span class="info-label">Способ получения</span><span class="info-val">Kaspi Transfer / Банк</span></div>
+        <div class="info-row"><span class="info-label">Минимальная сумма</span><span class="info-val">5,000 ₸</span></div>
+        <div class="info-row"><span class="info-label">Комиссия за вывод</span><span class="info-val" style="color:var(--green);">0% (бесплатно)</span></div>
+      </div>
+    </div>
+
+    <!-- CARDS -->
+    <div class="page" id="page-cards">
+      <h2>🎨 Карточки для Telegram</h2>
+      <p class="page-sub">Создайте красивую карточку с вашим реф-кодом и отправьте друзьям в Telegram или WhatsApp</p>
+
+      <div class="info-card" style="margin-bottom:1.5rem;">
+        <div class="section-title">1️⃣ Выберите шаблон</div>
+        <div class="templates-row">
+          <button class="tpl-btn selected" onclick="selectTpl(this,'invite')">
+            <span class="tpl-icon">🤝</span>
+            <div class="tpl-name">Приглашение</div>
+          </button>
+          <button class="tpl-btn" onclick="selectTpl(this,'promo')">
+            <span class="tpl-icon">🔥</span>
+            <div class="tpl-name">Акция</div>
+          </button>
+          <button class="tpl-btn" onclick="selectTpl(this,'earn')">
+            <span class="tpl-icon">💰</span>
+            <div class="tpl-name">Заработок</div>
+          </button>
+          <button class="tpl-btn" onclick="selectTpl(this,'team')">
+            <span class="tpl-icon">🚀</span>
+            <div class="tpl-name">Команда</div>
+          </button>
+        </div>
+      </div>
+
+      <div class="canvas-wrap">
+        <div class="section-title">2️⃣ Превью карточки</div>
+        <canvas id="cardCanvas" width="600" height="400"></canvas>
+        <div id="qrHolder" style="display:none;"></div>
+        <div class="card-actions">
+          <button class="btn-download" onclick="downloadCard()">⬇️ Скачать PNG</button>
+          <button class="btn-tg" onclick="openTelegram()">✈️ Открыть Telegram</button>
+        </div>
+      </div>
+
+      <div class="info-card" style="margin-top:1.5rem;">
+        <div class="section-title">3️⃣ Текст сообщения (скопируйте и отправьте вместе с картинкой)</div>
+        <textarea class="msg-box" id="cardMsg" rows="5" readonly></textarea>
+        <button class="copy-btn" style="margin-top:0.8rem;" onclick="copyCardMsg()">📋 Скопировать текст</button>
+      </div>
+    </div>
+
+    <!-- PROFILE -->
+    <div class="page" id="page-profile">
+      <h2>Мой профиль</h2>
+      <p class="page-sub">Ваши данные в системе TULPAR</p>
+      <div class="info-card" id="profileData">Загрузка...</div>
+
+      <div class="info-card" style="margin-top:1.5rem;">
+        <div class="section-title">🔒 Сменить пароль</div>
+        <div style="max-width:400px;">
+          <div style="margin-bottom:1rem;">
+            <label style="display:block;font-size:0.85rem;color:var(--muted);margin-bottom:0.4rem;font-weight:600;">Текущий пароль</label>
+            <input type="password" id="oldPass" placeholder="Введите текущий пароль" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;padding:0.7rem 1rem;color:var(--white);font-size:0.95rem;" />
+          </div>
+          <div style="margin-bottom:1rem;">
+            <label style="display:block;font-size:0.85rem;color:var(--muted);margin-bottom:0.4rem;font-weight:600;">Новый пароль</label>
+            <input type="password" id="newPass" placeholder="Минимум 4 символа" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;padding:0.7rem 1rem;color:var(--white);font-size:0.95rem;" />
+          </div>
+          <button onclick="changePassword()" style="background:var(--primary);color:#fff;border:none;padding:0.7rem 1.5rem;border-radius:10px;font-weight:700;cursor:pointer;font-size:0.9rem;">Сменить пароль</button>
+          <div id="pwMsg" style="margin-top:0.8rem;font-size:0.85rem;display:none;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="page" id="page-history">
+      <h2>История транзакций 📋</h2>
+      <p class="page-sub">Все ваши операции в системе TULPAR</p>
+      <div class="info-card" id="historyContent">
+        <div class="loading">Загрузка истории...</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  const TARIFF_NAMES = { free:'🆓 Бесплатный', start:'⚡ СТАРТ', partner:'🚀 ПАРТНЁР', leader:'👑 ЛИДЕР' };
+  const TARIFF_COMM = {
+    start: ['8%','—','—'],
+    partner: ['12%','3%','1%'],
+    leader: ['15%','3%','1%']
+  };
+  const STATUS_NAMES = { new:'🟡 Новый', active:'🟢 Активный', paid:'🟢 Оплачен', inactive:'🔴 Неактивный' };
+  let partner = null;
+
+  async function loadData() {
+    const token = localStorage.getItem('tulpar_token');
+    if (!token) return location.href = '/login';
+    try {
+      const res = await fetch('/api/partner/me', { headers:{ Authorization:'Bearer '+token } });
+      if (res.status === 401) { localStorage.removeItem('tulpar_token'); return location.href='/login'; }
+      partner = await res.json();
+      renderPartner();
+    } catch(e) { document.getElementById('loadingScreen').textContent = '❌ Ошибка загрузки данных'; }
+  }
+
+  function renderPartner() {
+    document.getElementById('loadingScreen').style.display = 'none';
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-overview').classList.add('active');
+
+    const initial = partner.name.charAt(0).toUpperCase();
+    document.getElementById('sideAvatar').textContent = initial;
+    document.getElementById('sideName').textContent = partner.name;
+    document.getElementById('sidePhone').textContent = '+' + partner.phone;
+    document.getElementById('sideTariff').textContent = TARIFF_NAMES[partner.tariff] || partner.tariff;
+    document.getElementById('navName').textContent = partner.name;
+    document.getElementById('navTariff').textContent = TARIFF_NAMES[partner.tariff] || '';
+
+    // Overview stats
+    document.getElementById('statRefCode').textContent = partner.ref_code;
+    document.getElementById('statTariff').textContent = TARIFF_NAMES[partner.tariff] || '';
+    document.getElementById('statTeam').textContent = partner.teamCount || 0;
+    document.getElementById('statStatus').textContent = STATUS_NAMES[partner.status] || partner.status;
+
+    // Ref link
+    const baseUrl = location.origin;
+    const link = `${baseUrl}/register?ref=${partner.ref_code}`;
+    const catalogLink = `${baseUrl}/catalog?ref=${partner.ref_code}`;
+    document.getElementById('bigRefCode').textContent = partner.ref_code;
+    document.getElementById('refCode2').textContent = partner.ref_code;
+    document.getElementById('refLinkText').textContent = link;
+    document.getElementById('catalogLinkText').textContent = catalogLink;
+
+    // Load order stats
+    loadOrderStats();
+
+    // Commissions
+    const comms = TARIFF_COMM[partner.tariff] || ['—','—','—'];
+    const cards = document.querySelectorAll('#commGrid .comm-card .comm-pct');
+    comms.forEach((c,i) => { if(cards[i]) cards[i].textContent = c; });
+
+    // Short message
+    document.getElementById('shortMsg').textContent =
+      `Привет! Я работаю с TULPAR — платформой, где можно зарабатывать делясь товарами в Telegram. Без склада, без вложений в товар. Зарегистрируйся по моей ссылке: ${link} (мой код: ${partner.ref_code})`;
+
+    // Income calc
+    const calcHtml = {
+      start: `<div class="info-row"><span class="info-label">Личные продажи 200,000 ₸ × 8%</span><span class="info-val" style="color:var(--green)">= 16,000 ₸</span></div><div class="info-row"><span class="info-label">Реферальная команда</span><span class="info-val" style="color:var(--muted)">— (апгрейд на ПАРТНЁР)</span></div>`,
+      partner: `<div class="info-row"><span class="info-label">Личные продажи 300,000 ₸ × 12%</span><span class="info-val" style="color:var(--green)">= 36,000 ₸</span></div><div class="info-row"><span class="info-label">Команда 10 чел × 150,000 ₸ × 3%</span><span class="info-val" style="color:var(--green)">= 45,000 ₸</span></div><div class="info-row"><span class="info-label">Лидерский бонус</span><span class="info-val" style="color:var(--green)">= 15,000 ₸</span></div><div class="info-row" style="background:rgba(212,33,61,0.1);border-radius:8px;padding:0.8rem;"><span style="font-weight:700">ИТОГО</span><span style="font-weight:900;color:var(--gold);font-size:1.2rem">96,000 ₸</span></div>`,
+      leader: `<div class="info-row"><span class="info-label">Личные продажи 500,000 ₸ × 15%</span><span class="info-val" style="color:var(--green)">= 75,000 ₸</span></div><div class="info-row"><span class="info-label">Команда 30 чел × 200,000 ₸ × 3%</span><span class="info-val" style="color:var(--green)">= 180,000 ₸</span></div><div class="info-row"><span class="info-label">Лидерский бонус 1%</span><span class="info-val" style="color:var(--green)">= 25,000 ₸</span></div><div class="info-row" style="background:rgba(212,33,61,0.1);border-radius:8px;padding:0.8rem;"><span style="font-weight:700">ИТОГО</span><span style="font-weight:900;color:var(--gold);font-size:1.2rem">280,000 ₸</span></div>`
+    };
+    document.getElementById('incomeCalc').innerHTML = calcHtml[partner.tariff] || '';
+
+    // Balance
+    document.getElementById('statBalance').textContent = (partner.balance || 0).toLocaleString('ru') + ' ₸';
+
+    // Free banner
+    const bannerWrap = document.getElementById('freeBannerWrap');
+    if (partner.tariff === 'free') {
+      bannerWrap.innerHTML = `<div class="free-banner"><div class="free-banner-text"><h3>У вас бесплатный тариф</h3><p>Купите пакет, чтобы получать комиссии с продаж и строить команду</p></div><button class="btn-buy-banner" onclick="showPage('tariff');document.querySelectorAll('.side-nav-item').forEach(b=>b.classList.remove('active'));document.querySelectorAll('.side-nav-item')[1].classList.add('active');">Выбрать тариф</button></div>`;
+    } else {
+      bannerWrap.innerHTML = '';
+    }
+
+    // Tariff page
+    renderTariffPage();
+
+    // Profile
+    document.getElementById('profileData').innerHTML = `
+      <div class="info-row"><span class="info-label">Имя</span><span class="info-val">${partner.name}</span></div>
+      <div class="info-row"><span class="info-label">Телефон</span><span class="info-val">+${partner.phone}</span></div>
+      <div class="info-row"><span class="info-label">Email</span><span class="info-val">${partner.email||'—'}</span></div>
+      <div class="info-row"><span class="info-label">Город</span><span class="info-val">${partner.city||'—'}</span></div>
+      <div class="info-row"><span class="info-label">Тариф</span><span class="info-val">${TARIFF_NAMES[partner.tariff]||''}</span></div>
+      <div class="info-row"><span class="info-label">Реферальный код</span><span class="info-val" style="color:var(--gold);letter-spacing:2px">${partner.ref_code}</span></div>
+      <div class="info-row"><span class="info-label">Партнёров привлечено</span><span class="info-val" style="color:var(--green)">${partner.teamCount||0}</span></div>
+      <div class="info-row"><span class="info-label">Дата регистрации</span><span class="info-val">${new Date(partner.created_at).toLocaleDateString('ru-RU')}</span></div>
+    `;
+  }
+
+  function showPage(name) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.side-nav-item').forEach(b => b.classList.remove('active'));
+    document.getElementById('page-'+name).classList.add('active');
+    event.currentTarget.classList.add('active');
+    if (name === 'cards' && partner) setTimeout(drawCard, 50);
+    if (name === 'history' && partner) loadTransactions();
+  }
+
+  function copyCode() { navigator.clipboard.writeText(partner.ref_code).then(()=>toast('Код скопирован!')); }
+  function copyLink() { const link=`${location.origin}/register?ref=${partner.ref_code}`; navigator.clipboard.writeText(link).then(()=>toast('Ссылка скопирована!')); }
+  function copyCatalogLink() { const link=`${location.origin}/catalog?ref=${partner.ref_code}`; navigator.clipboard.writeText(link).then(()=>toast('Ссылка на каталог скопирована!')); }
+  function copyMsg(t) { navigator.clipboard.writeText(document.getElementById('shortMsg').textContent).then(()=>toast('Сообщение скопировано!')); }
+
+  async function loadOrderStats() {
+    try {
+      const token = localStorage.getItem('tulpar_token');
+      const res = await fetch('/api/partner/orders', { headers:{ Authorization:'Bearer '+token } });
+      const data = await res.json();
+      document.getElementById('statOrders').textContent = data.count || 0;
+      document.getElementById('statOrdersTotal').textContent = (data.total || 0).toLocaleString('ru') + ' ₸';
+    } catch(e) {}
+  }
+
+  function toast(msg) {
+    const el=document.createElement('div'); el.className='toast success'; el.textContent=msg;
+    document.body.appendChild(el); setTimeout(()=>el.remove(),3000);
+  }
+
+  async function changePassword() {
+    const old_password = document.getElementById('oldPass').value;
+    const new_password = document.getElementById('newPass').value;
+    const msg = document.getElementById('pwMsg');
+    if (!old_password || !new_password) { msg.style.display='block'; msg.style.color='#FF8FA0'; msg.textContent='Заполните оба поля'; return; }
+    if (new_password.length < 4) { msg.style.display='block'; msg.style.color='#FF8FA0'; msg.textContent='Минимум 4 символа'; return; }
+    try {
+      const token = localStorage.getItem('tulpar_token');
+      const res = await fetch('/api/partner/change-password', { method:'POST', headers:{'Content-Type':'application/json',Authorization:'Bearer '+token}, body:JSON.stringify({old_password,new_password}) });
+      const data = await res.json();
+      msg.style.display = 'block';
+      if (res.ok) { msg.style.color='#27AE60'; msg.textContent=data.message; document.getElementById('oldPass').value=''; document.getElementById('newPass').value=''; }
+      else { msg.style.color='#FF8FA0'; msg.textContent=data.error; }
+    } catch(e) { msg.style.display='block'; msg.style.color='#FF8FA0'; msg.textContent=e.message; }
+  }
+
+  function logout() { localStorage.removeItem('tulpar_token'); localStorage.removeItem('tulpar_partner'); location.href='/'; }
+
+  // ═══════════════ CARD GENERATOR ═══════════════
+  let currentTpl = 'invite';
+
+  const TEMPLATES = {
+    invite: {
+      title: 'Присоединяйся к TULPAR!',
+      sub: 'Зарабатывай делясь товарами',
+      accent: '#D4213D',
+      emoji: '🤝',
+      msg: (p, link) => `🦅 Привет!\n\nЯ партнёр TULPAR — казахстанской платформы, где можно зарабатывать, просто делясь товарами с друзьями в Telegram.\n\n✅ Без склада\n✅ Без вложений в товар\n✅ Комиссия 8–15% с каждой продажи\n\nЗарегистрируйся по моей ссылке и начни зарабатывать:\n👉 ${link}\n\nМой реф-код: ${p.ref_code}`
+    },
+    promo: {
+      title: '🔥 ГОРЯЧИЕ ТОВАРЫ',
+      sub: 'Лучшие цены только сегодня',
+      accent: '#F5A623',
+      emoji: '🔥',
+      msg: (p, link) => `🔥 Горячие предложения от TULPAR!\n\nКачество + выгодные цены на тысячи товаров:\n🧴 Красота и уход\n🍎 Здоровое питание\n🏠 Дом и быт\n\nПокупай выгодно через мою ссылку:\n👉 ${link}\n\nКод партнёра: ${p.ref_code}`
+    },
+    earn: {
+      title: 'Зарабатывай от 50 000 ₸',
+      sub: 'в месяц без офиса и склада',
+      accent: '#27AE60',
+      emoji: '💰',
+      msg: (p, link) => `💰 Хочешь дополнительный доход?\n\nС TULPAR можно зарабатывать от 50 000 ₸/мес:\n• 8–15% с личных продаж\n• 3% с продаж твоей команды\n• Выплаты каждую пятницу 💳\n\nНачни сегодня — вступительный взнос от 15 000 ₸:\n👉 ${link}\n\nМой код: ${p.ref_code}`
+    },
+    team: {
+      title: 'Стань частью команды',
+      sub: 'TULPAR — сила в людях',
+      accent: '#7B1FA2',
+      emoji: '🚀',
+      msg: (p, link) => `🚀 Строю команду в TULPAR!\n\nЕсли тебе интересно:\n• Работа онлайн из любого города\n• Гибкий график\n• Обучение и поддержка от меня\n• Доход растёт вместе с командой\n\nНапиши мне или регистрируйся сам:\n👉 ${link}\n\nКод: ${p.ref_code}`
+    }
+  };
+
+  function selectTpl(btn, tplName) {
+    document.querySelectorAll('.tpl-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    currentTpl = tplName;
+    if (partner) drawCard();
+  }
+
+  function drawCard() {
+    const canvas = document.getElementById('cardCanvas');
+    const ctx = canvas.getContext('2d');
+    const W = 600, H = 400;
+    const tpl = TEMPLATES[currentTpl];
+    const refLink = `${location.origin}/register?ref=${partner.ref_code}`;
+
+    // Background gradient
+    const bg = ctx.createLinearGradient(0, 0, W, H);
+    bg.addColorStop(0, '#0D0D1A');
+    bg.addColorStop(0.5, '#1A1A2E');
+    bg.addColorStop(1, '#16213E');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // Decorative circle (glow)
+    const glow = ctx.createRadialGradient(W*0.75, H*0.3, 10, W*0.75, H*0.3, 200);
+    glow.addColorStop(0, tpl.accent + '33');
+    glow.addColorStop(1, 'transparent');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, W, H);
+
+    // Top accent bar
+    const bar = ctx.createLinearGradient(0, 0, W, 0);
+    bar.addColorStop(0, tpl.accent);
+    bar.addColorStop(1, tpl.accent + '88');
+    ctx.fillStyle = bar;
+    ctx.fillRect(0, 0, W, 4);
+
+    // Logo — TULPAR
+    ctx.font = 'bold 28px Arial';
+    ctx.fillStyle = '#FF4D6A';
+    ctx.fillText('TUL', 36, 52);
+    const tw = ctx.measureText('TUL').width;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillText('PAR', 36 + tw, 52);
+
+    // Tagline
+    ctx.font = '12px Arial';
+    ctx.fillStyle = '#A0A8C0';
+    ctx.fillText('Социальная коммерция Казахстана', 36, 68);
+
+    // Emoji
+    ctx.font = '54px Arial';
+    ctx.fillText(tpl.emoji, W - 90, 70);
+
+    // Main title
+    ctx.font = 'bold 30px Arial';
+    const titleGrad = ctx.createLinearGradient(0, 0, W*0.6, 0);
+    titleGrad.addColorStop(0, '#FFFFFF');
+    titleGrad.addColorStop(1, tpl.accent);
+    ctx.fillStyle = titleGrad;
+    wrapText(ctx, tpl.title, 36, 130, 480, 38);
+
+    // Subtitle
+    ctx.font = '16px Arial';
+    ctx.fillStyle = '#A0A8C0';
+    ctx.fillText(tpl.sub, 36, 185);
+
+    // Divider line
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(36, 205);
+    ctx.lineTo(W - 36, 205);
+    ctx.stroke();
+
+    // Ref code box
+    ctx.fillStyle = 'rgba(255,255,255,0.06)';
+    roundRect(ctx, 36, 220, 240, 70, 12);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(245,166,35,0.4)';
+    ctx.lineWidth = 1;
+    roundRect(ctx, 36, 220, 240, 70, 12);
+    ctx.stroke();
+
+    ctx.font = '11px Arial';
+    ctx.fillStyle = '#A0A8C0';
+    ctx.fillText('Реферальный код', 48, 240);
+    ctx.font = 'bold 28px Arial';
+    ctx.fillStyle = '#F5A623';
+    ctx.letterSpacing = '4px';
+    ctx.fillText(partner.ref_code, 48, 272);
+    ctx.letterSpacing = '0px';
+
+    // Partner name
+    ctx.fillStyle = 'rgba(255,255,255,0.06)';
+    roundRect(ctx, 36, 304, 240, 52, 12);
+    ctx.fill();
+    ctx.font = '11px Arial';
+    ctx.fillStyle = '#A0A8C0';
+    ctx.fillText('Партнёр', 48, 322);
+    ctx.font = 'bold 15px Arial';
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillText(partner.name, 48, 344);
+
+    // QR code area
+    const qrSize = 130;
+    const qrX = W - qrSize - 36;
+    const qrY = 220;
+    ctx.fillStyle = '#FFFFFF';
+    roundRect(ctx, qrX - 8, qrY - 8, qrSize + 16, qrSize + 16, 12);
+    ctx.fill();
+
+    // Draw QR using qrcode lib into a hidden div then copy to canvas
+    generateQR(refLink, qrSize, qrX, qrY, ctx);
+
+    // Link text below QR
+    ctx.font = '10px Arial';
+    ctx.fillStyle = '#A0A8C0';
+    ctx.fillText('Сканируй QR или переходи по ссылке', qrX - 16, qrY + qrSize + 20);
+
+    // Bottom footer
+    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    ctx.fillRect(0, H - 40, W, 40);
+    ctx.font = '11px Arial';
+    ctx.fillStyle = '#A0A8C0';
+    ctx.fillText('tulparkz.kz  •  Telegram: @tulparkz  •  Работаем по всему Казахстану', 36, H - 14);
+
+    // Update message text
+    document.getElementById('cardMsg').value = TEMPLATES[currentTpl].msg(partner, refLink);
+  }
+
+  function generateQR(text, size, x, y, mainCtx) {
+    const holder = document.getElementById('qrHolder');
+    holder.innerHTML = '';
+    try {
+      new QRCode(holder, {
+        text: text,
+        width: size,
+        height: size,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+      // Wait for QR to render then copy
+      setTimeout(() => {
+        const qrImg = holder.querySelector('img') || holder.querySelector('canvas');
+        if (qrImg) {
+          const tmpImg = new Image();
+          tmpImg.onload = () => mainCtx.drawImage(tmpImg, x, y, size, size);
+          tmpImg.src = qrImg.tagName === 'CANVAS' ? qrImg.toDataURL() : qrImg.src;
+        }
+      }, 100);
+    } catch(e) {
+      // QR lib not loaded - draw placeholder
+      mainCtx.fillStyle = '#333';
+      mainCtx.fillRect(x, y, size, size);
+      mainCtx.font = '11px Arial';
+      mainCtx.fillStyle = '#fff';
+      mainCtx.fillText('QR код', x + 40, y + 65);
+    }
+  }
+
+  function wrapText(ctx, text, x, y, maxW, lineH) {
+    const words = text.split(' ');
+    let line = '';
+    for (let w of words) {
+      const test = line + w + ' ';
+      if (ctx.measureText(test).width > maxW && line !== '') {
+        ctx.fillText(line, x, y);
+        line = w + ' ';
+        y += lineH;
+      } else { line = test; }
+    }
+    ctx.fillText(line, x, y);
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.lineTo(x+w-r, y);
+    ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+    ctx.lineTo(x+w, y+h-r);
+    ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+    ctx.lineTo(x+r, y+h);
+    ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+    ctx.lineTo(x, y+r);
+    ctx.quadraticCurveTo(x, y, x+r, y);
+    ctx.closePath();
+  }
+
+  function downloadCard() {
+    const canvas = document.getElementById('cardCanvas');
+    const link = document.createElement('a');
+    link.download = `TULPAR_card_${partner.ref_code}_${currentTpl}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    toast('Карточка скачана! 🎨');
+  }
+
+  function openTelegram() {
+    const msg = encodeURIComponent(document.getElementById('cardMsg').value);
+    window.open(`https://t.me/share/url?url=${encodeURIComponent(location.origin+'/register?ref='+partner.ref_code)}&text=${msg}`, '_blank');
+  }
+
+  function copyCardMsg() {
+    navigator.clipboard.writeText(document.getElementById('cardMsg').value).then(() => toast('Текст скопирован! 📋'));
+  }
+
+  function renderTariffPage() {
+    const container = document.getElementById('tariffContent');
+    const TARIFF_ORDER = ['start','partner','leader'];
+    const TARIFF_PRICES = { start:'15,000 ₸', partner:'50,000 ₸', leader:'150,000 ₸' };
+    const TARIFF_FEATURES = {
+      start: ['8% с личных продаж','Реферальный код','Доступ к каталогу'],
+      partner: ['12% с личных продаж','3% с команды 1 ур.','1% с команды 2 ур.'],
+      leader: ['15% с личных продаж','3% с команды 1 ур.','1% с команды 2 ур.']
+    };
+
+    if (partner.tariff === 'free') {
+      container.innerHTML = `
+        <p style="margin-bottom:1.5rem;color:var(--muted);">Сейчас у вас бесплатный тариф. Выберите пакет для начала работы:</p>
+        <div class="tariff-cards-grid">
+          ${TARIFF_ORDER.map(t => `
+            <div class="tariff-card">
+              <div class="tariff-card-name">${TARIFF_NAMES[t]}</div>
+              <div class="tariff-card-price">${TARIFF_PRICES[t]}</div>
+              <div class="tariff-card-features">${TARIFF_FEATURES[t].map(f=>'✅ '+f).join('<br>')}</div>
+              <button class="btn-buy" onclick="buyTariff('${t}')">Купить</button>
+            </div>
+          `).join('')}
+        </div>`;
+    } else {
+      const currentIdx = TARIFF_ORDER.indexOf(partner.tariff);
+      let upgradeHtml = '';
+      TARIFF_ORDER.forEach((t, i) => {
+        if (i > currentIdx) {
+          upgradeHtml += `
+            <div class="upgrade-card">
+              <div class="upgrade-text">
+                <h3>Перейти на ${TARIFF_NAMES[t]}</h3>
+                <p>Стоимость: ${TARIFF_PRICES[t]}</p>
+              </div>
+              <button class="upgrade-btn" onclick="buyTariff('${t}')">Апгрейд</button>
+            </div>`;
+        }
+      });
+      container.innerHTML = `
+        <div class="info-card">
+          <div class="section-title">Ваш текущий тариф</div>
+          <div class="info-row"><span class="info-label">Тариф</span><span class="info-val" style="color:var(--gold)">${TARIFF_NAMES[partner.tariff]}</span></div>
+          <div class="info-row"><span class="info-label">Статус</span><span class="info-val">${STATUS_NAMES[partner.status]||partner.status}</span></div>
+          <div class="info-row"><span class="info-label">Комиссии</span><span class="info-val">${(TARIFF_COMM[partner.tariff]||[]).join(' / ')}</span></div>
+        </div>
+        ${upgradeHtml || '<p style="color:var(--muted);margin-top:1rem;">У вас максимальный тариф!</p>'}`;
+    }
+  }
+
+  async function buyTariff(tariff) {
+    if (!confirm('Вы уверены, что хотите купить тариф ' + (TARIFF_NAMES[tariff]||tariff) + '?')) return;
+    try {
+      const token = localStorage.getItem('tulpar_token');
+      const res = await fetch('/api/partner/buy-tariff', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', Authorization:'Bearer '+token },
+        body: JSON.stringify({ tariff })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast(data.message || 'Тариф успешно куплен!');
+        await loadData();
+      } else {
+        toast(data.error || 'Ошибка покупки тарифа');
+      }
+    } catch(e) {
+      toast('Ошибка: ' + e.message);
+    }
+  }
+
+  async function loadTransactions() {
+    const container = document.getElementById('historyContent');
+    container.innerHTML = '<div class="loading">Загрузка истории...</div>';
+    try {
+      const token = localStorage.getItem('tulpar_token');
+      const res = await fetch('/api/partner/transactions', { headers:{ Authorization:'Bearer '+token } });
+      const data = await res.json();
+      const txs = Array.isArray(data) ? data : (data.transactions || []);
+      if (!txs.length) {
+        container.innerHTML = '<p style="color:var(--muted);padding:1rem;">Транзакций пока нет</p>';
+        return;
+      }
+      container.innerHTML = '<ul class="tx-list">' + txs.map(tx => {
+        const isPositive = tx.amount >= 0;
+        const sign = isPositive ? '+' : '';
+        const cls = isPositive ? 'positive' : 'negative';
+        const date = tx.created_at ? new Date(tx.created_at).toLocaleDateString('ru-RU',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+        return `<li class="tx-item"><div><div>${tx.description || tx.type || 'Операция'}</div><div class="tx-desc">${date}</div></div><div class="tx-amount ${cls}">${sign}${Math.abs(tx.amount).toLocaleString('ru')} ₸</div></li>`;
+      }).join('') + '</ul>';
+    } catch(e) {
+      container.innerHTML = '<p style="color:#FF8FA0;padding:1rem;">Ошибка загрузки истории</p>';
+    }
+  }
+
+  loadData();
+</script>
+</body>
+</html>

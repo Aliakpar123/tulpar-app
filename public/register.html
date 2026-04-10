@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TULPAR — Стать партнёром</title>
+  <style>
+    :root {
+      --primary: #D4213D; --primary-dark: #A01530; --gold: #F5A623;
+      --dark: #0D0D1A; --dark2: #1A1A2E; --card: #1E2A45;
+      --border: rgba(255,255,255,0.1); --muted: #A0A8C0;
+      --green: #27AE60; --white: #FFFFFF;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--dark); color:var(--white); min-height:100vh; display:flex; flex-direction:column; }
+    nav { background:rgba(13,13,26,0.98); border-bottom:1px solid var(--border); padding:0 5%; display:flex; align-items:center; justify-content:space-between; height:64px; position:sticky; top:0; z-index:10; }
+    .nav-logo { font-size:1.6rem; font-weight:900; background:linear-gradient(90deg,#FF4D6A,#F5A623); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .nav-logo span { -webkit-text-fill-color:var(--white); }
+    nav a { color:var(--muted); text-decoration:none; font-size:0.9rem; }
+    nav a:hover { color:var(--white); }
+    main { flex:1; display:flex; align-items:center; justify-content:center; padding:3rem 5%; }
+    .container { width:100%; max-width:560px; }
+    .form-card { background:var(--card); border:1px solid var(--border); border-radius:24px; padding:2.5rem; }
+    .form-header { text-align:center; margin-bottom:2rem; }
+    .form-header .icon { font-size:2.5rem; margin-bottom:0.8rem; }
+    .form-header h1 { font-size:1.8rem; font-weight:900; margin-bottom:0.4rem; }
+    .form-header p { color:var(--muted); font-size:0.95rem; }
+    .form-group { margin-bottom:1.2rem; }
+    label { display:block; font-size:0.85rem; color:var(--muted); margin-bottom:0.5rem; font-weight:600; }
+    label .req { color:var(--primary); }
+    input, select, textarea {
+      width:100%; background:rgba(255,255,255,0.06); border:1px solid var(--border);
+      border-radius:10px; padding:0.8rem 1rem; color:var(--white); font-size:0.95rem;
+      font-family:inherit; transition:border-color 0.2s;
+    }
+    input:focus, select:focus, textarea:focus { outline:none; border-color:var(--primary); }
+    input::placeholder, textarea::placeholder { color:rgba(160,168,192,0.5); }
+    select option { background:var(--dark2); color:var(--white); }
+    .tariff-cards { display:grid; grid-template-columns:repeat(3,1fr); gap:0.8rem; }
+    .tariff-card { background:rgba(255,255,255,0.04); border:1.5px solid var(--border); border-radius:12px; padding:1rem 0.5rem; text-align:center; cursor:pointer; transition:all 0.2s; }
+    .tariff-card:hover { border-color:var(--primary); }
+    .tariff-card.selected { border-color:var(--primary); background:rgba(212,33,61,0.12); }
+    .tariff-card input[type=radio] { display:none; }
+    .tariff-icon { font-size:1.4rem; margin-bottom:0.3rem; }
+    .tariff-name { font-size:0.85rem; font-weight:700; }
+    .tariff-price { font-size:0.78rem; color:var(--gold); margin-top:0.2rem; }
+    .btn-submit { width:100%; background:linear-gradient(135deg,var(--primary),var(--primary-dark)); color:#fff; border:none; padding:1rem; border-radius:12px; font-size:1.05rem; font-weight:700; cursor:pointer; transition:all 0.2s; margin-top:0.5rem; }
+    .btn-submit:hover { box-shadow:0 6px 24px rgba(212,33,61,0.4); transform:translateY(-1px); }
+    .btn-submit:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+    .divider { display:flex; align-items:center; gap:1rem; margin:1.5rem 0; color:var(--muted); font-size:0.85rem; }
+    .divider::before, .divider::after { content:''; flex:1; height:1px; background:var(--border); }
+    .login-link { text-align:center; }
+    .login-link a { color:var(--primary); text-decoration:none; font-weight:600; }
+    .toast { position:fixed; top:80px; right:20px; padding:1rem 1.5rem; border-radius:12px; font-weight:600; z-index:100; animation:slideIn 0.3s ease; max-width:320px; }
+    .toast.success { background:#1a3d2b; border:1px solid var(--green); color:var(--green); }
+    .toast.error { background:#3d1a1a; border:1px solid var(--primary); color:#FF8FA0; }
+    @keyframes slideIn { from { transform:translateX(100%); opacity:0; } to { transform:translateX(0); opacity:1; } }
+    .success-screen { display:none; text-align:center; padding:2rem 0; }
+    .success-screen .big-icon { font-size:4rem; margin-bottom:1rem; }
+    .success-screen h2 { font-size:1.8rem; font-weight:900; margin-bottom:0.8rem; }
+    .success-screen p { color:var(--muted); margin-bottom:0.5rem; }
+    .ref-badge { display:inline-block; background:rgba(212,33,61,0.15); border:1px solid rgba(212,33,61,0.4); border-radius:10px; padding:0.7rem 1.5rem; font-size:1.3rem; font-weight:900; color:var(--gold); letter-spacing:2px; margin:1rem 0; cursor:pointer; }
+    .back-link { color:var(--muted); text-decoration:none; font-size:0.9rem; }
+    .back-link:hover { color:var(--white); }
+    .row2 { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+  </style>
+</head>
+<body>
+<nav>
+  <a href="/" class="nav-logo">TUL<span>PAR</span></a>
+  <a href="/login">Уже партнёр? Войти →</a>
+</nav>
+
+<main>
+  <div class="container">
+    <div class="form-card">
+      <!-- REGISTRATION FORM -->
+      <div id="formSection">
+        <div class="form-header">
+          <div class="icon">🦅</div>
+          <h1>Стать партнёром</h1>
+          <p>Бесплатная регистрация — выберите тариф позже в личном кабинете</p>
+        </div>
+
+        <form id="regForm">
+          <div class="row2">
+            <div class="form-group">
+              <label>Имя <span class="req">*</span></label>
+              <input type="text" id="name" placeholder="Ваше имя" required />
+            </div>
+            <div class="form-group">
+              <label>Телефон <span class="req">*</span></label>
+              <div style="display:flex;align-items:center;gap:0;">
+                <span style="background:rgba(255,255,255,0.1);border:1px solid var(--border);border-right:none;border-radius:10px 0 0 10px;padding:0.8rem 0.7rem;color:var(--white);font-size:0.95rem;white-space:nowrap;">+7</span>
+                <input type="tel" id="phone" placeholder="700 000 00 00" required maxlength="13" style="border-radius:0 10px 10px 0;" />
+              </div>
+            </div>
+          </div>
+          <div class="row2">
+            <div class="form-group">
+              <label>Пароль <span class="req">*</span></label>
+              <input type="password" id="password" placeholder="Минимум 4 символа" required minlength="4" />
+            </div>
+            <div class="form-group">
+              <label>Город</label>
+              <input type="text" id="city" placeholder="Алматы" />
+            </div>
+          </div>
+          <div class="row2">
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" id="email" placeholder="email@mail.ru" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Реферальный код (если есть)</label>
+            <input type="text" id="referrer" placeholder="TLPXXXXXX" maxlength="9" style="text-transform:uppercase" />
+          </div>
+
+          <button type="submit" class="btn-submit" id="submitBtn">
+            Зарегистрироваться →
+          </button>
+        </form>
+
+        <div class="divider">или</div>
+        <div class="login-link">
+          Уже зарегистрированы? <a href="/login">Войти в личный кабинет</a>
+        </div>
+      </div>
+
+      <!-- SUCCESS SCREEN -->
+      <div class="success-screen" id="successSection">
+        <div class="big-icon">🎉</div>
+        <h2>Добро пожаловать<br/>в TULPAR!</h2>
+        <p>Ваша заявка принята. Менеджер свяжется с вами в течение 24 часов.</p>
+        <p style="margin-top:1rem; font-size:0.9rem; color:var(--muted);">Ваш реферальный код:</p>
+        <div class="ref-badge" id="refCodeDisplay" title="Нажмите чтобы скопировать">—</div>
+        <p style="font-size:0.8rem; color:var(--muted);">Нажмите на код чтобы скопировать</p>
+        <div style="margin-top:1.5rem; display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+          <a href="/login" class="btn-submit" style="display:inline-block; width:auto; padding:0.8rem 1.8rem; text-decoration:none;">Войти в кабинет →</a>
+          <a href="/" class="back-link" style="display:flex; align-items:center;">← На главную</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+  // Check for referrer param
+  const params = new URLSearchParams(location.search);
+  const refParam = params.get('ref');
+  if (refParam) document.getElementById('referrer').value = refParam.toUpperCase();
+
+  // Phone mask — only digits, max 10
+  const phoneInput = document.getElementById('phone');
+  phoneInput.addEventListener('input', () => {
+    let v = phoneInput.value.replace(/\D/g, '').slice(0, 10);
+    if (v.length > 3 && v.length <= 6) v = v.slice(0,3)+' '+v.slice(3);
+    else if (v.length > 6 && v.length <= 8) v = v.slice(0,3)+' '+v.slice(3,6)+' '+v.slice(6);
+    else if (v.length > 8) v = v.slice(0,3)+' '+v.slice(3,6)+' '+v.slice(6,8)+' '+v.slice(8);
+    phoneInput.value = v;
+  });
+
+  function showToast(msg, type = 'success') {
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 4000);
+  }
+
+  document.getElementById('regForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true; btn.textContent = 'Регистрация...';
+
+    try {
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: document.getElementById('name').value.trim(),
+          phone: '7' + document.getElementById('phone').value.replace(/\D/g,''),
+          password: document.getElementById('password').value,
+          email: document.getElementById('email').value.trim(),
+          city: document.getElementById('city').value.trim(),
+          referrer: document.getElementById('referrer').value.trim().toUpperCase()
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      document.getElementById('formSection').style.display = 'none';
+      document.getElementById('refCodeDisplay').textContent = data.ref_code;
+      document.getElementById('successSection').style.display = 'block';
+    } catch (err) {
+      showToast(err.message, 'error');
+      btn.disabled = false; btn.textContent = 'Зарегистрироваться →';
+    }
+  });
+
+  document.getElementById('refCodeDisplay').addEventListener('click', function() {
+    navigator.clipboard.writeText(this.textContent).then(() => showToast('Код скопирован!'));
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TULPAR — Каталог</title>
+  <style>
+    :root { --primary:#D4213D; --primary-dark:#A01530; --gold:#F5A623; --dark:#0D0D1A; --dark2:#1A1A2E; --card:#1E2A45; --border:rgba(255,255,255,0.1); --muted:#A0A8C0; --green:#27AE60; --white:#FFFFFF; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--dark); color:var(--white); min-height:100vh; }
+
+    /* NAV */
+    nav { background:rgba(13,13,26,0.98); border-bottom:1px solid var(--border); padding:0 5%; display:flex; align-items:center; justify-content:space-between; height:64px; position:sticky; top:0; z-index:20; }
+    .nav-logo { font-size:1.6rem; font-weight:900; background:linear-gradient(90deg,#FF4D6A,#F5A623); -webkit-background-clip:text; -webkit-text-fill-color:transparent; text-decoration:none; }
+    .nav-logo span { -webkit-text-fill-color:var(--white); }
+    .nav-right { display:flex; align-items:center; gap:1.5rem; }
+    .nav-right a { color:var(--muted); text-decoration:none; font-size:0.9rem; }
+    .nav-right a:hover { color:var(--white); }
+    .cart-btn { background:var(--primary); color:#fff; border:none; padding:0.5rem 1.2rem; border-radius:10px; font-weight:700; cursor:pointer; font-size:0.9rem; position:relative; }
+    .cart-btn .badge { position:absolute; top:-6px; right:-6px; background:var(--gold); color:#000; width:20px; height:20px; border-radius:50%; font-size:0.7rem; font-weight:900; display:flex; align-items:center; justify-content:center; }
+
+    /* CONTENT */
+    .container { max-width:1200px; margin:0 auto; padding:2rem 5%; }
+
+    /* CATEGORIES */
+    .categories { display:flex; gap:0.8rem; margin-bottom:2rem; flex-wrap:wrap; }
+    .cat-btn { background:rgba(255,255,255,0.06); border:1px solid var(--border); border-radius:12px; padding:0.6rem 1.2rem; color:var(--muted); cursor:pointer; font-size:0.9rem; font-weight:600; transition:all 0.2s; }
+    .cat-btn:hover { border-color:var(--primary); color:var(--white); }
+    .cat-btn.active { background:var(--primary); border-color:var(--primary); color:#fff; }
+
+    /* PRODUCT GRID */
+    .products { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:1.5rem; }
+    .product-card { background:var(--card); border:1px solid var(--border); border-radius:16px; overflow:hidden; transition:transform 0.2s, box-shadow 0.2s; }
+    .product-card:hover { transform:translateY(-4px); box-shadow:0 8px 30px rgba(0,0,0,0.3); }
+    .product-img { width:100%; height:200px; object-fit:cover; background:rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center; font-size:3rem; color:var(--muted); }
+    .product-img img { width:100%; height:100%; object-fit:cover; }
+    .product-body { padding:1.2rem; }
+    .product-name { font-size:1rem; font-weight:700; margin-bottom:0.3rem; }
+    .product-desc { font-size:0.8rem; color:var(--muted); margin-bottom:0.8rem; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .product-bottom { display:flex; align-items:center; justify-content:space-between; }
+    .product-price { font-size:1.2rem; font-weight:900; color:var(--gold); }
+    .btn-add { background:var(--primary); color:#fff; border:none; padding:0.5rem 1rem; border-radius:8px; font-weight:700; cursor:pointer; font-size:0.85rem; transition:all 0.2s; }
+    .btn-add:hover { background:var(--primary-dark); }
+    .empty { text-align:center; padding:4rem 2rem; color:var(--muted); font-size:1.1rem; }
+
+    /* CART MODAL */
+    .cart-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:30; justify-content:flex-end; }
+    .cart-overlay.open { display:flex; }
+    .cart-panel { background:var(--dark2); width:100%; max-width:440px; height:100vh; overflow-y:auto; padding:2rem; animation:slideRight 0.3s ease; }
+    @keyframes slideRight { from{transform:translateX(100%)} to{transform:translateX(0)} }
+    .cart-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; }
+    .cart-header h2 { font-size:1.3rem; }
+    .cart-close { background:none; border:none; color:var(--muted); font-size:1.5rem; cursor:pointer; }
+    .cart-item { display:flex; gap:1rem; padding:1rem 0; border-bottom:1px solid var(--border); }
+    .cart-item-img { width:60px; height:60px; border-radius:8px; object-fit:cover; background:rgba(255,255,255,0.05); flex-shrink:0; }
+    .cart-item-info { flex:1; }
+    .cart-item-name { font-size:0.9rem; font-weight:600; }
+    .cart-item-price { font-size:0.85rem; color:var(--gold); margin-top:0.2rem; }
+    .cart-item-qty { display:flex; align-items:center; gap:0.5rem; margin-top:0.4rem; }
+    .qty-btn { width:28px; height:28px; border-radius:6px; border:1px solid var(--border); background:rgba(255,255,255,0.06); color:var(--white); cursor:pointer; font-size:1rem; display:flex; align-items:center; justify-content:center; }
+    .qty-btn:hover { border-color:var(--primary); }
+    .cart-item-remove { background:none; border:none; color:var(--muted); cursor:pointer; font-size:0.8rem; margin-top:0.3rem; }
+    .cart-item-remove:hover { color:var(--primary); }
+    .cart-total { display:flex; justify-content:space-between; padding:1.5rem 0; font-size:1.1rem; font-weight:700; border-top:2px solid var(--border); margin-top:1rem; }
+    .cart-total span:last-child { color:var(--gold); font-size:1.3rem; }
+    .btn-checkout { width:100%; background:linear-gradient(135deg,var(--primary),var(--primary-dark)); color:#fff; border:none; padding:1rem; border-radius:12px; font-size:1.05rem; font-weight:700; cursor:pointer; margin-top:1rem; }
+    .btn-checkout:hover { box-shadow:0 6px 24px rgba(212,33,61,0.4); }
+    .btn-checkout:disabled { opacity:0.5; cursor:not-allowed; }
+    .cart-empty { text-align:center; padding:3rem 1rem; color:var(--muted); }
+
+    /* CHECKOUT */
+    .checkout-form { margin-top:1.5rem; }
+    .checkout-form label { display:block; font-size:0.85rem; color:var(--muted); margin-bottom:0.4rem; font-weight:600; }
+    .checkout-form input { width:100%; background:rgba(255,255,255,0.06); border:1px solid var(--border); border-radius:10px; padding:0.7rem 1rem; color:var(--white); font-size:0.95rem; margin-bottom:1rem; }
+    .checkout-form input:focus { outline:none; border-color:var(--primary); }
+    .checkout-success { text-align:center; padding:2rem 0; }
+    .checkout-success .big { font-size:3rem; margin-bottom:1rem; }
+
+    /* TOAST */
+    .toast { position:fixed; top:80px; right:20px; padding:1rem 1.5rem; border-radius:12px; font-weight:600; z-index:100; animation:fadeIn 0.3s; }
+    .toast.success { background:#1a3d2b; border:1px solid var(--green); color:var(--green); }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
+
+    @media(max-width:600px) { .products{grid-template-columns:1fr 1fr;gap:0.8rem;} .product-img{height:140px;} .cart-panel{max-width:100%;} }
+  </style>
+</head>
+<body>
+<nav>
+  <a href="/" class="nav-logo">TUL<span>PAR</span></a>
+  <div class="nav-right">
+    <a href="/register">Стать партнёром</a>
+    <button class="cart-btn" onclick="openCart()">🛒 Корзина <span class="badge" id="cartBadge">0</span></button>
+  </div>
+</nav>
+
+<div class="container">
+  <h1 style="font-size:1.8rem; font-weight:900; margin-bottom:0.3rem;">Каталог товаров</h1>
+  <p style="color:var(--muted); margin-bottom:1.5rem;">Выберите товары и оформите заказ</p>
+
+  <div class="categories" id="categories">
+    <button class="cat-btn active" onclick="filterCategory(null, this)">Все</button>
+  </div>
+
+  <div class="products" id="productsGrid">
+    <div class="empty">Загрузка...</div>
+  </div>
+</div>
+
+<!-- CART SIDEBAR -->
+<div class="cart-overlay" id="cartOverlay" onclick="if(event.target===this)closeCart()">
+  <div class="cart-panel">
+    <div class="cart-header">
+      <h2>🛒 Корзина</h2>
+      <button class="cart-close" onclick="closeCart()">&times;</button>
+    </div>
+    <div id="cartContent">
+      <div class="cart-empty">Корзина пуста</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let products = [];
+  let categories = [];
+  let cart = JSON.parse(localStorage.getItem('tulpar_cart') || '[]');
+  let currentCategory = null;
+
+  // Save partner ref from URL
+  const params = new URLSearchParams(location.search);
+  const refParam = params.get('ref');
+  if (refParam) localStorage.setItem('tulpar_ref', refParam.toUpperCase());
+
+  async function loadData() {
+    const [catRes, prodRes] = await Promise.all([
+      fetch('/api/categories').then(r => r.json()),
+      fetch('/api/products').then(r => r.json()),
+    ]);
+    categories = catRes;
+    products = prodRes;
+    renderCategories();
+    renderProducts();
+    updateCartBadge();
+  }
+
+  function renderCategories() {
+    const wrap = document.getElementById('categories');
+    wrap.innerHTML = '<button class="cat-btn active" onclick="filterCategory(null, this)">Все</button>';
+    categories.forEach(c => {
+      wrap.innerHTML += `<button class="cat-btn" onclick="filterCategory(${c.id}, this)">${c.icon} ${c.name}</button>`;
+    });
+  }
+
+  function filterCategory(id, btn) {
+    currentCategory = id;
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderProducts();
+  }
+
+  function renderProducts() {
+    const grid = document.getElementById('productsGrid');
+    const filtered = currentCategory ? products.filter(p => p.category_id === currentCategory) : products;
+
+    if (!filtered.length) {
+      grid.innerHTML = '<div class="empty">Товаров пока нет</div>';
+      return;
+    }
+
+    grid.innerHTML = filtered.map(p => `
+      <div class="product-card">
+        <div class="product-img">
+          ${p.image_url ? `<img src="${p.image_url}" alt="${p.name}" onerror="this.parentElement.innerHTML='📦'" />` : '📦'}
+        </div>
+        <div class="product-body">
+          <div class="product-name">${p.name}</div>
+          <div class="product-desc">${p.description || ''}</div>
+          <div class="product-bottom">
+            <div class="product-price">${p.price.toLocaleString('ru')} ₸</div>
+            <button class="btn-add" onclick="addToCart(${p.id})">В корзину</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function addToCart(productId) {
+    const p = products.find(x => x.id === productId);
+    if (!p) return;
+    const existing = cart.find(x => x.id === productId);
+    if (existing) existing.quantity++;
+    else cart.push({ id: p.id, name: p.name, price: p.price, image_url: p.image_url, quantity: 1 });
+    saveCart();
+    toast('Добавлено в корзину');
+  }
+
+  function saveCart() {
+    localStorage.setItem('tulpar_cart', JSON.stringify(cart));
+    updateCartBadge();
+  }
+
+  function updateCartBadge() {
+    const count = cart.reduce((s, i) => s + i.quantity, 0);
+    document.getElementById('cartBadge').textContent = count;
+    document.getElementById('cartBadge').style.display = count ? 'flex' : 'none';
+  }
+
+  function openCart() {
+    document.getElementById('cartOverlay').classList.add('open');
+    renderCart();
+  }
+
+  function closeCart() {
+    document.getElementById('cartOverlay').classList.remove('open');
+  }
+
+  function renderCart() {
+    const wrap = document.getElementById('cartContent');
+    if (!cart.length) {
+      wrap.innerHTML = '<div class="cart-empty">Корзина пуста</div>';
+      return;
+    }
+    const total = cart.reduce((s, i) => s + i.price * i.quantity, 0);
+    wrap.innerHTML = cart.map((item, idx) => `
+      <div class="cart-item">
+        <div class="cart-item-img" style="${item.image_url ? `background:url(${item.image_url}) center/cover` : ''}">
+          ${item.image_url ? '' : '📦'}
+        </div>
+        <div class="cart-item-info">
+          <div class="cart-item-name">${item.name}</div>
+          <div class="cart-item-price">${item.price.toLocaleString('ru')} ₸</div>
+          <div class="cart-item-qty">
+            <button class="qty-btn" onclick="changeQty(${idx}, -1)">−</button>
+            <span>${item.quantity}</span>
+            <button class="qty-btn" onclick="changeQty(${idx}, 1)">+</button>
+          </div>
+          <button class="cart-item-remove" onclick="removeItem(${idx})">Удалить</button>
+        </div>
+      </div>
+    `).join('') + `
+      <div class="cart-total">
+        <span>Итого:</span>
+        <span>${total.toLocaleString('ru')} ₸</span>
+      </div>
+      <div id="checkoutArea">
+        <button class="btn-checkout" onclick="showCheckout()">Оформить заказ →</button>
+      </div>
+    `;
+  }
+
+  function changeQty(idx, delta) {
+    cart[idx].quantity += delta;
+    if (cart[idx].quantity < 1) cart.splice(idx, 1);
+    saveCart();
+    renderCart();
+  }
+
+  function removeItem(idx) {
+    cart.splice(idx, 1);
+    saveCart();
+    renderCart();
+  }
+
+  function showCheckout() {
+    document.getElementById('checkoutArea').innerHTML = `
+      <div class="checkout-form">
+        <label>Ваше имя</label>
+        <input type="text" id="orderName" placeholder="Имя" required />
+        <label>Телефон</label>
+        <div style="display:flex;align-items:center;margin-bottom:1rem;">
+          <span style="background:rgba(255,255,255,0.1);border:1px solid var(--border);border-right:none;border-radius:10px 0 0 10px;padding:0.7rem;color:var(--white);font-size:0.95rem;">+7</span>
+          <input type="tel" id="orderPhone" placeholder="700 000 00 00" maxlength="13" style="border-radius:0 10px 10px 0;margin-bottom:0;" />
+        </div>
+        <button class="btn-checkout" onclick="submitOrder()">Подтвердить заказ</button>
+      </div>
+    `;
+    // Phone mask
+    const ph = document.getElementById('orderPhone');
+    ph.addEventListener('input', () => {
+      let v = ph.value.replace(/\\D/g, '').slice(0, 10);
+      if (v.length > 3 && v.length <= 6) v = v.slice(0,3)+' '+v.slice(3);
+      else if (v.length > 6 && v.length <= 8) v = v.slice(0,3)+' '+v.slice(3,6)+' '+v.slice(6);
+      else if (v.length > 8) v = v.slice(0,3)+' '+v.slice(3,6)+' '+v.slice(6,8)+' '+v.slice(8);
+      ph.value = v;
+    });
+  }
+
+  async function submitOrder() {
+    const name = document.getElementById('orderName').value.trim();
+    const phone = '7' + document.getElementById('orderPhone').value.replace(/\D/g, '');
+    if (!name) return toast('Введите имя');
+    if (phone.length < 11) return toast('Введите полный номер');
+
+    const partnerRef = localStorage.getItem('tulpar_ref') || '';
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name, phone,
+          items: cart.map(i => ({ id: i.id, quantity: i.quantity })),
+          partner_ref: partnerRef,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      cart = [];
+      saveCart();
+      document.getElementById('cartContent').innerHTML = `
+        <div class="checkout-success">
+          <div class="big">🎉</div>
+          <h3>Заказ #${data.order_id} оформлен!</h3>
+          <p style="color:var(--muted);margin-top:0.8rem;">Сумма: <b style="color:var(--gold)">${data.total.toLocaleString('ru')} ₸</b></p>
+          <p style="color:var(--muted);margin-top:0.5rem;">Менеджер свяжется с вами для подтверждения.</p>
+          <button onclick="closeCart()" style="margin-top:1.5rem;background:var(--primary);color:#fff;border:none;padding:0.7rem 1.5rem;border-radius:10px;cursor:pointer;font-weight:700;">Продолжить покупки</button>
+        </div>
+      `;
+    } catch (e) { toast(e.message); }
+  }
+
+  function toast(msg) {
+    const el = document.createElement('div');
+    el.className = 'toast success';
+    el.textContent = msg;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+  }
+
+  loadData();
+</script>
+</body>
+</html>
