@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TULPAR — Каталог</title>
+  <title>TULPAR — Магазин партнёра</title>
   <style>
     :root { --primary:#D4213D; --primary-dark:#A01530; --gold:#F5A623; --dark:#0D0D1A; --dark2:#1A1A2E; --card:#1E2A45; --border:rgba(255,255,255,0.1); --muted:#A0A8C0; --green:#27AE60; --white:#FFFFFF; }
     * { margin:0; padding:0; box-sizing:border-box; }
@@ -18,8 +18,17 @@
     .cart-btn { background:var(--primary); color:#fff; border:none; padding:0.5rem 1.2rem; border-radius:10px; font-weight:700; cursor:pointer; font-size:0.9rem; position:relative; }
     .cart-btn .badge { position:absolute; top:-6px; right:-6px; background:var(--gold); color:#000; width:20px; height:20px; border-radius:50%; font-size:0.7rem; font-weight:900; display:flex; align-items:center; justify-content:center; }
 
+    /* PARTNER HEADER */
+    .partner-header { text-align:center; padding:2.5rem 5% 1.5rem; }
+    .partner-avatar { width:80px; height:80px; border-radius:50%; background:linear-gradient(135deg,var(--primary),var(--gold)); display:inline-flex; align-items:center; justify-content:center; font-size:2rem; font-weight:900; color:#fff; margin-bottom:1rem; box-shadow:0 4px 20px rgba(212,33,61,0.3); }
+    .partner-name { font-size:1.6rem; font-weight:900; margin-bottom:0.3rem; }
+    .partner-meta { display:flex; align-items:center; justify-content:center; gap:0.8rem; margin-bottom:0.5rem; flex-wrap:wrap; }
+    .partner-city { color:var(--muted); font-size:0.9rem; }
+    .partner-level { background:linear-gradient(135deg,var(--gold),#e8960e); color:#000; font-size:0.75rem; font-weight:800; padding:0.25rem 0.8rem; border-radius:20px; }
+    .partner-subtitle { color:var(--muted); font-size:1rem; margin-top:0.5rem; }
+
     /* CONTENT */
-    .container { max-width:1200px; margin:0 auto; padding:2rem 5%; }
+    .container { max-width:1200px; margin:0 auto; padding:1.5rem 5% 2rem; }
 
     /* CATEGORIES */
     .categories { display:flex; gap:0.8rem; margin-bottom:2rem; flex-wrap:wrap; }
@@ -29,7 +38,7 @@
 
     /* PRODUCT GRID */
     .products { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:1.5rem; }
-    .product-card { background:var(--card); border:1px solid var(--border); border-radius:16px; overflow:hidden; transition:transform 0.2s, box-shadow 0.2s; position:relative; }
+    .product-card { background:var(--card); border:1px solid var(--border); border-radius:16px; overflow:hidden; transition:transform 0.2s, box-shadow 0.2s; }
     .product-card:hover { transform:translateY(-4px); box-shadow:0 8px 30px rgba(0,0,0,0.3); }
     .product-img { width:100%; height:200px; object-fit:cover; background:rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center; font-size:3rem; color:var(--muted); }
     .product-img img { width:100%; height:100%; object-fit:cover; }
@@ -41,21 +50,6 @@
     .btn-add { background:var(--primary); color:#fff; border:none; padding:0.5rem 1rem; border-radius:8px; font-weight:700; cursor:pointer; font-size:0.85rem; transition:all 0.2s; }
     .btn-add:hover { background:var(--primary-dark); }
     .empty { text-align:center; padding:4rem 2rem; color:var(--muted); font-size:1.1rem; }
-
-    /* REVIEWS */
-    .product-rating { margin-bottom:0.5rem; color:#F5A623; font-size:0.85rem; }
-    .review-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:40; justify-content:center; align-items:center; }
-    .review-modal.open { display:flex; }
-    .review-panel { background:var(--dark2); border-radius:16px; padding:2rem; width:90%; max-width:500px; max-height:80vh; overflow-y:auto; }
-    .star-select { font-size:1.5rem; cursor:pointer; }
-    .star-select span:hover, .star-select span.active { color:#F5A623; }
-    .star-select span { color:rgba(255,255,255,0.2); transition:color 0.2s; }
-    .review-item { border-bottom:1px solid var(--border); padding:0.8rem 0; }
-    .review-stars { color:#F5A623; font-size:0.8rem; }
-    .review-name { font-weight:600; font-size:0.85rem; }
-    .review-text { color:var(--muted); font-size:0.85rem; margin-top:0.3rem; }
-    .review-date { color:var(--muted); font-size:0.7rem; }
-    .product-card { cursor:pointer; }
 
     /* CART MODAL */
     .cart-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:30; justify-content:flex-end; }
@@ -95,54 +89,35 @@
     .toast.success { background:#1a3d2b; border:1px solid var(--green); color:var(--green); }
     @keyframes fadeIn { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
 
-    @media(max-width:600px) { .products{grid-template-columns:1fr 1fr;gap:0.8rem;} .product-img{height:140px;} .cart-panel{max-width:100%;} nav{flex-wrap:wrap;gap:0.5rem;height:auto;padding:0.8rem 5%;} .nav-logo{font-size:1.3rem;} .nav-right{gap:0.8rem;font-size:0.8rem;} .nav-right a{display:none;} .cart-btn{padding:0.4rem 0.8rem;font-size:0.8rem;} .container{padding:1.5rem 4%;} }
+    /* ERROR STATE */
+    .error-page { text-align:center; padding:6rem 2rem; }
+    .error-page .icon { font-size:4rem; margin-bottom:1.5rem; }
+    .error-page h2 { font-size:1.5rem; margin-bottom:0.8rem; }
+    .error-page p { color:var(--muted); margin-bottom:2rem; }
+    .error-page a { color:var(--primary); text-decoration:none; font-weight:700; }
+    .error-page a:hover { text-decoration:underline; }
+
+    @media(max-width:600px) { .products{grid-template-columns:1fr 1fr;gap:0.8rem;} .product-img{height:140px;} .cart-panel{max-width:100%;} nav{flex-wrap:wrap;gap:0.5rem;height:auto;padding:0.8rem 5%;} .nav-logo{font-size:1.3rem;} .nav-right{gap:0.8rem;font-size:0.8rem;} .cart-btn{padding:0.4rem 0.8rem;font-size:0.8rem;} .container{padding:1.5rem 4%;} .partner-header{padding:1.5rem 4% 1rem;} .partner-avatar{width:64px;height:64px;font-size:1.6rem;} .partner-name{font-size:1.3rem;} }
   </style>
 </head>
 <body>
 <nav>
   <a href="/" class="nav-logo">TUL<span>PAR</span></a>
   <div class="nav-right">
-    <a href="/register">Стать партнёром</a>
+    <a href="/catalog">Каталог</a>
     <button class="cart-btn" onclick="openCart()">🛒 Корзина <span class="badge" id="cartBadge">0</span></button>
   </div>
 </nav>
 
-<div class="container">
-  <h1 style="font-size:1.8rem; font-weight:900; margin-bottom:0.3rem;">Каталог товаров</h1>
-  <p style="color:var(--muted); margin-bottom:1.5rem;">Выберите товары и оформите заказ</p>
+<div id="partnerHeader" class="partner-header" style="display:none;"></div>
 
-  <div class="categories" id="categories">
+<div class="container">
+  <div class="categories" id="categories" style="display:none;">
     <button class="cat-btn active" onclick="filterCategory(null, this)">Все</button>
   </div>
 
   <div class="products" id="productsGrid">
     <div class="empty">Загрузка...</div>
-  </div>
-</div>
-
-<!-- REVIEW MODAL -->
-<div class="review-modal" id="reviewModal" onclick="if(event.target===this)closeReview()">
-  <div class="review-panel">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem;">
-      <h3 id="reviewProductName" style="font-size:1.1rem;font-weight:700;"></h3>
-      <button onclick="closeReview()" style="background:none;border:none;color:var(--muted);font-size:1.5rem;cursor:pointer;">&times;</button>
-    </div>
-    <div style="margin-bottom:1rem;">
-      <div style="font-size:0.85rem;color:var(--muted);margin-bottom:0.4rem;font-weight:600;">Ваша оценка</div>
-      <div class="star-select" id="starSelect">
-        <span data-v="1">★</span><span data-v="2">★</span><span data-v="3">★</span><span data-v="4">★</span><span data-v="5">★</span>
-      </div>
-    </div>
-    <div style="margin-bottom:0.8rem;">
-      <label style="font-size:0.85rem;color:var(--muted);font-weight:600;display:block;margin-bottom:0.3rem;">Ваше имя</label>
-      <input id="reviewName" type="text" placeholder="Имя" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;padding:0.6rem 0.9rem;color:var(--white);font-size:0.9rem;" />
-    </div>
-    <div style="margin-bottom:1rem;">
-      <label style="font-size:0.85rem;color:var(--muted);font-weight:600;display:block;margin-bottom:0.3rem;">Отзыв</label>
-      <textarea id="reviewText" placeholder="Ваш отзыв..." rows="3" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;padding:0.6rem 0.9rem;color:var(--white);font-size:0.9rem;resize:vertical;"></textarea>
-    </div>
-    <button onclick="submitReview()" style="width:100%;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;border:none;padding:0.8rem;border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;margin-bottom:1.5rem;">Оставить отзыв</button>
-    <div id="reviewsList"></div>
   </div>
 </div>
 
@@ -160,69 +135,90 @@
 </div>
 
 <script>
-  let products = [];
-  let categories = [];
-  let cart = JSON.parse(localStorage.getItem('tulpar_cart') || '[]');
-  let currentCategory = null;
-  let productRatings = {};
-  let currentReviewProductId = null;
-  let selectedStars = 0;
-
-  // Save partner ref from URL
-  const params = new URLSearchParams(location.search);
-  const refParam = params.get('ref');
-  if (refParam) localStorage.setItem('tulpar_ref', refParam.toUpperCase());
-
-  async function loadData() {
-    const [catRes, prodRes, ratRes] = await Promise.all([
-      fetch('/api/categories').then(r => r.json()),
-      fetch('/api/products').then(r => r.json()),
-      fetch('/api/products/ratings').then(r => r.json()).catch(() => ({})),
-    ]);
-    categories = catRes;
-    products = prodRes;
-    productRatings = ratRes;
-    renderCategories();
-    renderProducts();
-
-    // Load shared cart from URL ?cart=CODE
-    const cartCode = params.get('cart');
-    if (cartCode) {
-      try {
-        const shared = await fetch(`/api/cart/${cartCode}`).then(r => r.json());
-        if (shared.items && shared.items.length) {
-          cart = shared.items.map(item => {
-            const p = products.find(x => x.id === item.id);
-            return {
-              id: item.id,
-              name: p ? p.name : item.name || `Товар #${item.id}`,
-              price: p ? p.price : item.price || 0,
-              image_url: p ? p.image_url : item.image_url || '',
-              quantity: item.quantity,
-            };
-          });
-          if (shared.partner_ref) localStorage.setItem('tulpar_ref', shared.partner_ref);
-          saveCart();
-          openCart();
-        }
-      } catch (e) {
-        // silently ignore invalid cart codes
-      }
-    }
-
-    updateCartBadge();
+  // Extract ref_code from URL: /shop/TLPXXXXXX
+  const refCode = location.pathname.split('/shop/')[1];
+  if (!refCode) {
+    document.getElementById('productsGrid').innerHTML = `
+      <div class="error-page">
+        <div class="icon">🔗</div>
+        <h2>Ссылка недействительна</h2>
+        <p>Отсутствует реферальный код партнёра.</p>
+        <a href="/catalog">Перейти в каталог →</a>
+      </div>
+    `;
   }
 
-  async function reloadRatings() {
-    productRatings = await fetch('/api/products/ratings').then(r => r.json()).catch(() => ({}));
-    renderProducts();
+  let partner = null;
+  let products = [];
+  let categories = [];
+  let cart = JSON.parse(localStorage.getItem('tulpar_shop_cart') || '[]');
+  let currentCategory = null;
+
+  // Persist partner ref so orders are attributed
+  if (refCode) localStorage.setItem('tulpar_ref', refCode.toUpperCase());
+
+  async function loadShop() {
+    if (!refCode) return;
+
+    try {
+      // Fetch shop data and categories in parallel
+      const [shopRes, catRes] = await Promise.all([
+        fetch(`/api/shop/${encodeURIComponent(refCode)}`),
+        fetch('/api/categories').then(r => r.json()),
+      ]);
+
+      if (!shopRes.ok) {
+        const err = await shopRes.json().catch(() => ({}));
+        throw new Error(err.error || 'Партнёр не найден');
+      }
+
+      const shopData = await shopRes.json();
+      partner = shopData.partner;
+      products = shopData.products || [];
+      categories = catRes || [];
+
+      document.title = `TULPAR — Магазин ${partner.name}`;
+
+      renderPartnerHeader();
+      renderCategories();
+      renderProducts();
+      updateCartBadge();
+    } catch (e) {
+      document.getElementById('partnerHeader').style.display = 'none';
+      document.getElementById('categories').style.display = 'none';
+      document.getElementById('productsGrid').innerHTML = `
+        <div class="error-page">
+          <div class="icon">😕</div>
+          <h2>Партнёр не найден</h2>
+          <p>${e.message}</p>
+          <a href="/catalog">Перейти в каталог →</a>
+        </div>
+      `;
+    }
+  }
+
+  function renderPartnerHeader() {
+    const initial = partner.name.charAt(0).toUpperCase();
+    const header = document.getElementById('partnerHeader');
+    header.style.display = 'block';
+    header.innerHTML = `
+      <div class="partner-avatar">${initial}</div>
+      <div class="partner-name">${partner.name}</div>
+      <div class="partner-meta">
+        ${partner.city ? `<span class="partner-city">📍 ${partner.city}</span>` : ''}
+        <span class="partner-level">${partner.levelName || 'Партнёр'}</span>
+      </div>
+      <div class="partner-subtitle">Рекомендует для вас</div>
+    `;
   }
 
   function renderCategories() {
     const wrap = document.getElementById('categories');
+    if (!categories.length) { wrap.style.display = 'none'; return; }
+    wrap.style.display = 'flex';
     wrap.innerHTML = '<button class="cat-btn active" onclick="filterCategory(null, this)">Все</button>';
     categories.forEach(c => {
-      wrap.innerHTML += `<button class="cat-btn" onclick="filterCategory(${c.id}, this)">${c.icon} ${c.name}</button>`;
+      wrap.innerHTML += `<button class="cat-btn" onclick="filterCategory(${c.id}, this)">${c.icon || ''} ${c.name}</button>`;
     });
   }
 
@@ -243,122 +239,20 @@
     }
 
     grid.innerHTML = filtered.map(p => `
-      <div class="product-card" onclick="openReview(${p.id})">
-        ${p.is_selected == 1 ? `<div style="position:absolute;top:8px;left:8px;background:linear-gradient(135deg,#F5A623,#D4213D);color:#fff;font-size:0.65rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:6px;z-index:2;">TULPAR Selected ✓</div>` : ''}
+      <div class="product-card">
         <div class="product-img">
           ${p.image_url ? `<img src="${p.image_url}" alt="${p.name}" onerror="this.parentElement.innerHTML='📦'" />` : '📦'}
         </div>
         <div class="product-body">
           <div class="product-name">${p.name}</div>
           <div class="product-desc">${p.description || ''}</div>
-          <div class="product-rating" data-pid="${p.id}">
-            ${renderStars(productRatings[p.id]?.avg || 0)} <span style="color:var(--muted);font-size:0.75rem;">(${productRatings[p.id]?.count || 0})</span>
-          </div>
           <div class="product-bottom">
-            <div class="product-price">
-              ${p.partner_price && p.partner_price < p.price ?
-                `<span style="text-decoration:line-through;color:var(--muted);font-size:0.85rem;">${p.price.toLocaleString('ru')} ₸</span> <span style="color:var(--green);">${p.partner_price.toLocaleString('ru')} ₸</span> <span style="font-size:0.6rem;background:rgba(39,174,96,0.2);color:var(--green);padding:0.1rem 0.3rem;border-radius:4px;">партнёр</span>` :
-                `${p.price.toLocaleString('ru')} ₸`
-              }
-            </div>
-            <button class="btn-add" onclick="event.stopPropagation();addToCart(${p.id})">В корзину</button>
+            <div class="product-price">${Number(p.price).toLocaleString('ru')} ₸</div>
+            <button class="btn-add" onclick="addToCart(${p.id})">В корзину</button>
           </div>
         </div>
       </div>
     `).join('');
-  }
-
-  function renderStars(avg) {
-    let html = '';
-    for (let i = 1; i <= 5; i++) {
-      html += `<span style="color:#F5A623">${i <= Math.round(avg) ? '★' : '☆'}</span>`;
-    }
-    return html;
-  }
-
-  function openReview(productId) {
-    const p = products.find(x => x.id === productId);
-    if (!p) return;
-    currentReviewProductId = productId;
-    selectedStars = 0;
-    document.getElementById('reviewProductName').textContent = p.name;
-    document.getElementById('reviewName').value = '';
-    document.getElementById('reviewText').value = '';
-    updateStarSelect(0);
-    document.getElementById('reviewModal').classList.add('open');
-    loadReviews(productId);
-  }
-
-  function closeReview() {
-    document.getElementById('reviewModal').classList.remove('open');
-    currentReviewProductId = null;
-  }
-
-  function updateStarSelect(val) {
-    document.querySelectorAll('#starSelect span').forEach(s => {
-      s.classList.toggle('active', parseInt(s.dataset.v) <= val);
-    });
-  }
-
-  document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('#starSelect span').forEach(s => {
-      s.addEventListener('click', () => {
-        selectedStars = parseInt(s.dataset.v);
-        updateStarSelect(selectedStars);
-      });
-      s.addEventListener('mouseover', () => updateStarSelect(parseInt(s.dataset.v)));
-      s.addEventListener('mouseout', () => updateStarSelect(selectedStars));
-    });
-  });
-
-  async function loadReviews(productId) {
-    const wrap = document.getElementById('reviewsList');
-    wrap.innerHTML = '<div style="color:var(--muted);font-size:0.85rem;">Загрузка отзывов...</div>';
-    try {
-      const reviews = await fetch(`/api/products/${productId}/reviews`).then(r => r.json());
-      if (!reviews.length) {
-        wrap.innerHTML = '<div style="color:var(--muted);font-size:0.85rem;">Отзывов пока нет. Будьте первым!</div>';
-        return;
-      }
-      wrap.innerHTML = '<div style="font-weight:700;font-size:0.9rem;margin-bottom:0.8rem;">Отзывы</div>' +
-        reviews.map(r => `
-          <div class="review-item">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <span class="review-name">${r.name || 'Аноним'}</span>
-              <span class="review-date">${r.created_at ? new Date(r.created_at).toLocaleDateString('ru') : ''}</span>
-            </div>
-            <div class="review-stars">${renderStars(r.rating || 0)}</div>
-            <div class="review-text">${r.text || ''}</div>
-          </div>
-        `).join('');
-    } catch (e) {
-      wrap.innerHTML = '<div style="color:var(--muted);font-size:0.85rem;">Не удалось загрузить отзывы.</div>';
-    }
-  }
-
-  async function submitReview() {
-    if (!currentReviewProductId) return;
-    const name = document.getElementById('reviewName').value.trim();
-    const text = document.getElementById('reviewText').value.trim();
-    if (!selectedStars) return toast('Выберите оценку');
-    if (!name) return toast('Введите имя');
-    try {
-      const res = await fetch(`/api/products/${currentReviewProductId}/reviews`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, text, rating: selectedStars }),
-      });
-      if (!res.ok) throw new Error('Ошибка');
-      toast('Отзыв добавлен!');
-      document.getElementById('reviewName').value = '';
-      document.getElementById('reviewText').value = '';
-      selectedStars = 0;
-      updateStarSelect(0);
-      await loadReviews(currentReviewProductId);
-      await reloadRatings();
-    } catch (e) {
-      toast('Не удалось отправить отзыв');
-    }
   }
 
   function addToCart(productId) {
@@ -372,7 +266,7 @@
   }
 
   function saveCart() {
-    localStorage.setItem('tulpar_cart', JSON.stringify(cart));
+    localStorage.setItem('tulpar_shop_cart', JSON.stringify(cart));
     updateCartBadge();
   }
 
@@ -405,7 +299,7 @@
         </div>
         <div class="cart-item-info">
           <div class="cart-item-name">${item.name}</div>
-          <div class="cart-item-price">${item.price.toLocaleString('ru')} ₸</div>
+          <div class="cart-item-price">${Number(item.price).toLocaleString('ru')} ₸</div>
           <div class="cart-item-qty">
             <button class="qty-btn" onclick="changeQty(${idx}, -1)">−</button>
             <span>${item.quantity}</span>
@@ -421,7 +315,6 @@
       </div>
       <div id="checkoutArea">
         <button class="btn-checkout" onclick="showCheckout()">Оформить заказ →</button>
-        <button class="btn-share-cart" onclick="shareCart()" style="background:transparent;border:1px solid var(--border);width:100%;margin-top:0.5rem;color:var(--muted);padding:0.7rem;border-radius:12px;cursor:pointer;font-size:0.9rem;">📤 Поделиться корзиной</button>
       </div>
     `;
   }
@@ -469,7 +362,6 @@
     if (!name) return toast('Введите имя');
     if (phone.length < 11) return toast('Введите полный номер');
 
-    const partnerRef = localStorage.getItem('tulpar_ref') || '';
     try {
       const res = await fetch('/api/orders', {
         method: 'POST',
@@ -477,7 +369,7 @@
         body: JSON.stringify({
           name, phone,
           items: cart.map(i => ({ id: i.id, quantity: i.quantity })),
-          partner_ref: partnerRef,
+          partner_ref: refCode.toUpperCase(),
         }),
       });
       const data = await res.json();
@@ -497,25 +389,6 @@
     } catch (e) { toast(e.message); }
   }
 
-  async function shareCart() {
-    try {
-      const res = await fetch('/api/cart/share', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          items: cart.map(i => ({ id: i.id, quantity: i.quantity })),
-          partner_ref: localStorage.getItem('tulpar_ref') || '',
-        }),
-      });
-      const data = await res.json();
-      const fullUrl = location.origin + data.url;
-      await navigator.clipboard.writeText(fullUrl);
-      toast('Ссылка на корзину скопирована!');
-    } catch (e) {
-      toast('Не удалось поделиться корзиной');
-    }
-  }
-
   function toast(msg) {
     const el = document.createElement('div');
     el.className = 'toast success';
@@ -524,7 +397,8 @@
     setTimeout(() => el.remove(), 3000);
   }
 
-  loadData();
+  updateCartBadge();
+  loadShop();
 </script>
 </body>
 </html>

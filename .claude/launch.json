@@ -5,7 +5,7 @@
       "name": "tulpar",
       "runtimeExecutable": "python3",
       "runtimeArgs": ["server.py"],
-      "port": 3000
+      "port": 5001
     }
   ]
 }

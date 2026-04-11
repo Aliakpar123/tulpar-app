@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>TULPAR</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--bg:#0D0D1A;--text:#FFFFFF;--hint:#A0A8C0;--btn:#D4213D;--btn-text:#FFFFFF;--secondary-bg:#1A1A2E;--card-border:rgba(255,255,255,0.08);--green:#27AE60;--gold:#F5A623}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);-webkit-overflow-scrolling:touch}
+body::-webkit-scrollbar{display:none}
+
+/* Layout */
+#app{display:flex;flex-direction:column;height:100vh}
+#content{flex:1;overflow-y:auto;padding:16px 16px 90px;scrollbar-width:none}
+#content::-webkit-scrollbar{display:none}
+.page{display:none;animation:fadeIn .25s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* Bottom Tab Bar */
+.tab-bar{position:fixed;bottom:0;left:0;right:0;background:var(--secondary-bg);border-top:1px solid var(--card-border);display:flex;padding:6px 0;padding-bottom:calc(6px + env(safe-area-inset-bottom));z-index:100}
+.tab-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0;cursor:pointer;color:var(--hint);font-size:.65rem;transition:color .2s;-webkit-tap-highlight-color:transparent}
+.tab-item .ico{font-size:1.25rem}
+.tab-item.active{color:var(--btn)}
+
+/* Cards */
+.card{background:var(--secondary-bg);border-radius:14px;padding:16px;margin-bottom:12px}
+.card-sm{padding:12px}
+
+/* Buttons */
+.btn{background:var(--btn);color:var(--btn-text);border:none;border-radius:10px;padding:10px 18px;font-size:.9rem;font-weight:600;cursor:pointer;transition:opacity .2s;-webkit-tap-highlight-color:transparent}
+.btn:active{opacity:.7}
+.btn-outline{background:none;border:1px solid var(--btn);color:var(--btn)}
+.btn-sm{padding:7px 14px;font-size:.8rem;border-radius:8px}
+.btn-block{display:block;width:100%;text-align:center}
+
+/* Typography */
+h2{font-size:1.3rem;font-weight:800;margin-bottom:4px}
+.sub{color:var(--hint);font-size:.82rem}
+
+/* Stats row */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+.stat{text-align:center;background:var(--secondary-bg);border-radius:10px;padding:10px 6px}
+.stat-val{font-size:1.2rem;font-weight:800}
+.stat-label{font-size:.7rem;color:var(--hint);margin-top:2px}
+
+/* Badge */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:600;background:rgba(245,166,35,0.15);color:var(--gold);border:1px solid rgba(245,166,35,0.3)}
+
+/* Progress bar */
+.progress-wrap{margin:8px 0}
+.progress-bar{height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--btn),var(--gold));border-radius:3px;transition:width .4s ease}
+
+/* Quick actions */
+.quick-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.quick-btn{background:var(--secondary-bg);border:1px solid var(--card-border);border-radius:12px;padding:14px 8px;text-align:center;cursor:pointer;font-size:.78rem;font-weight:600;color:var(--text);-webkit-tap-highlight-color:transparent}
+.quick-btn .qico{font-size:1.4rem;display:block;margin-bottom:4px}
+
+/* Product grid */
+.product-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.product-card{background:var(--secondary-bg);border-radius:12px;overflow:hidden}
+.product-card img{width:100%;height:140px;object-fit:cover;display:block}
+.product-info{padding:10px}
+.product-name{font-size:.82rem;font-weight:700;margin-bottom:2px}
+.product-desc{font-size:.72rem;color:var(--hint);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:6px;line-height:1.3}
+.product-price{font-size:.95rem;font-weight:800;color:var(--gold)}
+.product-card .btn{margin-top:8px;width:100%;font-size:.78rem;padding:8px}
+
+/* Category tabs */
+.cat-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;scrollbar-width:none;margin-bottom:4px}
+.cat-tabs::-webkit-scrollbar{display:none}
+.cat-tab{flex-shrink:0;padding:6px 14px;border-radius:20px;font-size:.8rem;background:var(--secondary-bg);color:var(--hint);cursor:pointer;border:1px solid transparent;white-space:nowrap}
+.cat-tab.active{background:var(--btn);color:var(--btn-text);border-color:var(--btn)}
+
+/* Cart overlay */
+.cart-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;display:none;align-items:flex-end}
+.cart-overlay.show{display:flex}
+.cart-panel{background:var(--bg);border-radius:16px 16px 0 0;width:100%;max-height:80vh;overflow-y:auto;padding:20px 16px;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+.cart-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--card-border)}
+.cart-item-img{width:50px;height:50px;border-radius:8px;object-fit:cover}
+.cart-item-info{flex:1}
+.cart-item-name{font-size:.85rem;font-weight:600}
+.cart-item-price{font-size:.8rem;color:var(--gold)}
+.qty-ctrl{display:flex;align-items:center;gap:8px}
+.qty-ctrl button{width:28px;height:28px;border-radius:50%;border:1px solid var(--card-border);background:var(--secondary-bg);color:var(--text);font-size:1rem;cursor:pointer}
+.qty-ctrl span{font-size:.9rem;font-weight:600;min-width:16px;text-align:center}
+
+/* Checkout form */
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:.8rem;color:var(--hint);margin-bottom:4px}
+.form-group input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--card-border);background:var(--secondary-bg);color:var(--text);font-size:.9rem;outline:none}
+.form-group input:focus{border-color:var(--btn)}
+
+/* Team / leaderboard */
+.leader-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--card-border)}
+.leader-pos{width:24px;font-weight:800;font-size:.85rem;color:var(--hint);text-align:center}
+.leader-name{flex:1;font-size:.88rem;font-weight:600}
+.leader-val{font-size:.85rem;font-weight:700;color:var(--gold)}
+
+/* Shop toggles */
+.shop-product{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--card-border)}
+.shop-product img{width:44px;height:44px;border-radius:8px;object-fit:cover}
+.shop-product-info{flex:1}
+.toggle{position:relative;width:44px;height:26px;cursor:pointer}
+.toggle input{display:none}
+.toggle .slider{position:absolute;inset:0;background:rgba(255,255,255,0.12);border-radius:13px;transition:.3s}
+.toggle .slider::before{content:'';position:absolute;width:20px;height:20px;border-radius:50%;background:#fff;top:3px;left:3px;transition:.3s}
+.toggle input:checked+.slider{background:var(--btn)}
+.toggle input:checked+.slider::before{transform:translateX(18px)}
+
+/* Ref link box */
+.ref-box{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.04);border:1px solid var(--card-border);border-radius:10px;padding:10px 12px;margin:10px 0}
+.ref-box span{flex:1;font-size:.82rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--hint)}
+.ref-box button{flex-shrink:0}
+
+/* Tariff cards */
+.tariff-grid{display:grid;gap:10px;margin:12px 0}
+.tariff-card{background:var(--secondary-bg);border:1px solid var(--card-border);border-radius:14px;padding:16px;text-align:center;transition:border-color .2s}
+.tariff-card.highlight{border-color:var(--gold)}
+.tariff-price{font-size:1.4rem;font-weight:900;color:var(--gold);margin:6px 0}
+.tariff-feat{font-size:.75rem;color:var(--hint);margin-bottom:10px}
+
+/* Transactions */
+.tx-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--card-border);font-size:.85rem}
+.tx-desc{color:var(--hint)}
+.tx-amount{font-weight:700}
+.tx-amount.plus{color:var(--green)}
+.tx-amount.minus{color:var(--btn)}
+
+/* Info rows */
+.info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:.85rem}
+.info-row:last-child{border:none}
+.info-label{color:var(--hint)}
+.info-val{font-weight:600;text-align:right}
+
+/* Cart badge */
+.cart-badge{position:absolute;top:-4px;right:calc(50% - 16px);background:var(--btn);color:var(--btn-text);font-size:.6rem;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+
+/* Toast */
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:var(--secondary-bg);border:1px solid var(--card-border);color:var(--text);padding:10px 20px;border-radius:10px;font-size:.85rem;font-weight:600;z-index:300;animation:toastIn .3s ease}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,-20px)}to{opacity:1;transform:translate(-50%,0)}}
+
+/* Balance */
+.balance-card{background:linear-gradient(135deg,rgba(212,33,61,0.15),rgba(245,166,35,0.08));border:1px solid rgba(245,166,35,0.2);border-radius:16px;padding:20px;text-align:center;margin:12px 0}
+.balance-val{font-size:2.2rem;font-weight:900;color:var(--gold)}
+.balance-label{font-size:.8rem;color:var(--hint);margin-top:4px}
+
+/* Loading / auth screens */
+.screen-center{display:flex;flex-direction:column;align-items:center;justify-content:center;height:70vh;text-align:center;gap:12px}
+.spinner{width:36px;height:36px;border:3px solid var(--card-border);border-top-color:var(--btn);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="loading-screen" class="screen-center"><div class="spinner"></div><p class="sub">Загрузка...</p></div>
+  <div id="auth-error" class="screen-center" style="display:none">
+    <div style="font-size:2.5rem">🔒</div>
+    <h2>Регистрация</h2>
+    <p class="sub" style="max-width:280px">Для доступа нужна регистрация. Перейдите на сайт TULPAR и зарегистрируйтесь как партнёр.</p>
+  </div>
+
+  <div id="content" style="display:none">
+    <!-- HOME -->
+    <div id="page-home" class="page active">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+        <h2 id="home-name">Партнёр</h2>
+        <span class="badge" id="home-badge">⭐ Участник</span>
+      </div>
+      <div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="home-progress" style="width:0%"></div></div></div>
+      <p class="sub" id="home-progress-text"></p>
+      <div class="balance-card">
+        <div class="balance-val" id="home-balance">0 ₸</div>
+        <div class="balance-label">Баланс</div>
+      </div>
+      <div class="stats-row">
+        <div class="stat"><div class="stat-val" id="home-team">0</div><div class="stat-label">Команда</div></div>
+        <div class="stat"><div class="stat-val" id="home-orders">0</div><div class="stat-label">Заказы</div></div>
+        <div class="stat"><div class="stat-val" id="home-tariff">🆓</div><div class="stat-label">Тариф</div></div>
+      </div>
+      <div class="quick-actions">
+        <div class="quick-btn" onclick="showPage('catalog')"><span class="qico">🛒</span>Каталог</div>
+        <div class="quick-btn" onclick="showPage('shop')"><span class="qico">🏪</span>Мой магазин</div>
+        <div class="quick-btn" onclick="shareRef()"><span class="qico">🎁</span>Пригласить</div>
+      </div>
+    </div>
+
+    <!-- CATALOG -->
+    <div id="page-catalog" class="page">
+      <h2>Каталог</h2>
+      <p class="sub">Товары TULPAR</p>
+      <div class="cat-tabs" id="cat-tabs"></div>
+      <div class="product-grid" id="catalog-grid"></div>
+    </div>
+
+    <!-- TEAM -->
+    <div id="page-team" class="page">
+      <h2>Команда</h2>
+      <div class="card" style="margin-top:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><div class="sub">Участников в команде</div><div style="font-size:1.5rem;font-weight:800" id="team-count">0</div></div>
+          <span class="badge" id="team-badge">⭐ Участник</span>
+        </div>
+        <div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="team-progress" style="width:0%"></div></div></div>
+        <p class="sub" id="team-level-text"></p>
+      </div>
+      <div class="card card-sm">
+        <div class="sub" style="margin-bottom:6px">Реферальная ссылка</div>
+        <div class="ref-box"><span id="team-ref-link">—</span><button class="btn btn-sm" onclick="copyRef()">📋</button></div>
+        <button class="btn btn-outline btn-block btn-sm" style="margin-top:8px" onclick="shareRef()">Поделиться ссылкой</button>
+      </div>
+      <div class="card card-sm" style="margin-top:4px">
+        <div style="font-weight:700;margin-bottom:8px">🏆 Лидерборд</div>
+        <div id="leaderboard"></div>
+      </div>
+    </div>
+
+    <!-- SHOP -->
+    <div id="page-shop" class="page">
+      <h2>Мой магазин</h2>
+      <p class="sub">Персональная витрина</p>
+      <div class="card card-sm" style="margin-top:10px">
+        <div class="sub" style="margin-bottom:6px">Ссылка на магазин</div>
+        <div class="ref-box"><span id="shop-link">—</span><button class="btn btn-sm" onclick="copyShopLink()">📋</button></div>
+      </div>
+      <div class="card card-sm"><div style="font-weight:700;margin-bottom:10px">Товары в магазине</div><div id="shop-products"></div></div>
+      <button class="btn btn-block" style="margin-top:8px" onclick="saveShopProducts()">Сохранить</button>
+    </div>
+
+    <!-- PROFILE -->
+    <div id="page-profile" class="page">
+      <h2>Профиль</h2>
+      <div class="card" style="margin-top:12px" id="profile-info"></div>
+      <div id="tariff-section"></div>
+      <div class="card card-sm" style="margin-top:4px">
+        <div style="font-weight:700;margin-bottom:8px">💳 Транзакции</div>
+        <div id="tx-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cart overlay -->
+  <div class="cart-overlay" id="cart-overlay" onclick="if(event.target===this)closeCart()">
+    <div class="cart-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <h2>Корзина</h2>
+        <span style="font-size:1.4rem;cursor:pointer" onclick="closeCart()">✕</span>
+      </div>
+      <div id="cart-items"></div>
+      <div style="display:flex;justify-content:space-between;font-weight:800;font-size:1.1rem;margin:14px 0"><span>Итого</span><span id="cart-total" style="color:var(--gold)">0 ₸</span></div>
+      <div id="checkout-form" style="display:none">
+        <div class="form-group"><label>Имя</label><input id="order-name" placeholder="Ваше имя"></div>
+        <div class="form-group"><label>Телефон</label><input id="order-phone" placeholder="+7 (___) ___-__-__" inputmode="tel"></div>
+        <button class="btn btn-block" onclick="submitOrder()">Оформить заказ</button>
+      </div>
+      <button class="btn btn-block" id="checkout-btn" onclick="showCheckout()">К оформлению</button>
+    </div>
+  </div>
+
+  <!-- Tab bar -->
+  <div class="tab-bar" id="tab-bar" style="display:none">
+    <div class="tab-item active" data-page="home" onclick="showPage('home')"><span class="ico">🏠</span>Главная</div>
+    <div class="tab-item" data-page="catalog" onclick="showPage('catalog')" style="position:relative"><span class="ico">🛒</span>Каталог<span class="cart-badge" id="cart-badge-el" style="display:none">0</span></div>
+    <div class="tab-item" data-page="team" onclick="showPage('team')"><span class="ico">👥</span>Команда</div>
+    <div class="tab-item" data-page="shop" onclick="showPage('shop')"><span class="ico">🏪</span>Магазин</div>
+    <div class="tab-item" data-page="profile" onclick="showPage('profile')"><span class="ico">👤</span>Профиль</div>
+  </div>
+</div>
+
+<script>
+const tg = window.Telegram.WebApp;
+tg.ready();
+tg.expand();
+
+// Theme
+const tp = tg.themeParams || {};
+const root = document.documentElement.style;
+root.setProperty('--bg', tp.bg_color || '#0D0D1A');
+root.setProperty('--text', tp.text_color || '#FFFFFF');
+root.setProperty('--hint', tp.hint_color || '#A0A8C0');
+root.setProperty('--btn', tp.button_color || '#D4213D');
+root.setProperty('--btn-text', tp.button_text_color || '#FFFFFF');
+root.setProperty('--secondary-bg', tp.secondary_bg_color || '#1A1A2E');
+
+// Constants
+const LEVEL_ICONS = {member:'⭐',manager:'🏅',director:'👑'};
+const LEVEL_NAMES = {member:'Участник',manager:'Менеджер',director:'Директор'};
+const TARIFF_NAMES = {free:'🆓 Бесплатный',start:'⚡ СТАРТ',partner:'🚀 ПАРТНЁР',leader:'👑 ЛИДЕР'};
+const TARIFF_SHORT = {free:'🆓',start:'⚡',partner:'🚀',leader:'👑'};
+const LEVEL_REQ = {manager:5,director:20};
+
+// State
+let authToken = '';
+let partner = null;
+let products = [];
+let cart = [];
+let shopSelected = new Set();
+let currentPage = 'home';
+
+// Helpers
+const fmt = n => Number(n||0).toLocaleString('ru') + ' ₸';
+const $=id=>document.getElementById(id);
+
+function toast(msg){
+  const el=document.createElement('div');el.className='toast';el.textContent=msg;
+  document.body.appendChild(el);setTimeout(()=>el.remove(),2200);
+}
+
+// API
+async function api(path,opts={}){
+  const res=await fetch(path,{...opts,headers:{'Content-Type':'application/json','Authorization':'Bearer '+authToken,...(opts.headers||{})}});
+  return res.json();
+}
+
+// Auth
+async function init(){
+  try{
+    const authRes=await api('/api/tg-auth',{method:'POST',body:JSON.stringify({initData:tg.initData,start_param:tg.initDataUnsafe?.start_param||''})});
+    if(!authRes.token) throw new Error('no token');
+    authToken=authRes.token;
+    const me=await api('/api/partner/me');
+    if(me.error) throw new Error(me.error);
+    partner=me;
+    products=((await api('/api/products'))||[]);
+    $('loading-screen').style.display='none';
+    $('content').style.display='block';
+    $('tab-bar').style.display='flex';
+    renderHome();loadCatalog();loadTeam();loadShop();loadProfile();
+  }catch(e){
+    $('loading-screen').style.display='none';
+    $('auth-error').style.display='flex';
+  }
+}
+
+// Navigation
+function showPage(name){
+  currentPage=name;
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  $('page-'+name).classList.add('active');
+  document.querySelectorAll('.tab-item').forEach(t=>{t.classList.toggle('active',t.dataset.page===name)});
+  if(name==='home'){tg.BackButton.hide();}else{tg.BackButton.show();}
+}
+tg.BackButton.onClick(()=>showPage('home'));
+
+// HOME
+function renderHome(){
+  if(!partner)return;
+  const p=partner;
+  $('home-name').textContent=p.name||'Партнёр';
+  const lvl=p.level||'member';
+  $('home-badge').textContent=LEVEL_ICONS[lvl]+' '+LEVEL_NAMES[lvl];
+  const tc=p.team_count||0;
+  const nextLvl=lvl==='member'?'manager':lvl==='manager'?'director':null;
+  const nextReq=nextLvl?LEVEL_REQ[nextLvl]:0;
+  const pct=nextReq?Math.min(100,Math.round(tc/nextReq*100)):100;
+  $('home-progress').style.width=pct+'%';
+  $('home-progress-text').textContent=nextLvl?`${tc}/${nextReq} до ${LEVEL_NAMES[nextLvl]}`:'Максимальный уровень';
+  $('home-balance').textContent=fmt(p.balance);
+  $('home-team').textContent=tc;
+  $('home-orders').textContent=p.orders_count||0;
+  $('home-tariff').textContent=TARIFF_SHORT[p.tariff||'free'];
+}
+
+// CATALOG
+function loadCatalog(){
+  const cats=[...new Set(products.map(p=>p.category||'Все'))];
+  const tabs=$('cat-tabs');
+  tabs.innerHTML='<div class="cat-tab active" onclick="filterCat(\'all\')">Все</div>'+cats.map(c=>`<div class="cat-tab" onclick="filterCat('${c}')">${c}</div>`).join('');
+  renderProducts(products);
+}
+
+function filterCat(cat){
+  document.querySelectorAll('.cat-tab').forEach((t,i)=>{t.classList.toggle('active',cat==='all'?i===0:t.textContent===cat)});
+  renderProducts(cat==='all'?products:products.filter(p=>(p.category||'Все')===cat));
+}
+
+function renderProducts(list){
+  $('catalog-grid').innerHTML=list.map(p=>`
+    <div class="product-card">
+      <img src="${p.image||'/img/placeholder.png'}" alt="${p.name}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22140%22><rect fill=%22%231A1A2E%22 width=%22200%22 height=%22140%22/><text x=%2250%%22 y=%2250%%22 fill=%22%23A0A8C0%22 text-anchor=%22middle%22 dy=%22.3em%22 font-size=%2214%22>TULPAR</text></svg>'">
+      <div class="product-info">
+        <div class="product-name">${p.name}</div>
+        <div class="product-desc">${p.description||''}</div>
+        <div class="product-price">${fmt(p.price)}</div>
+        <button class="btn btn-sm" onclick="addToCart(${p.id})">В корзину</button>
+      </div>
+    </div>`).join('');
+}
+
+// CART
+function addToCart(id){
+  const item=cart.find(c=>c.id===id);
+  if(item){item.qty++;}else{const p=products.find(x=>x.id===id);if(p)cart.push({...p,qty:1});}
+  updateCartBadge();toast('Добавлено в корзину');
+}
+
+function updateCartBadge(){
+  const total=cart.reduce((s,c)=>s+c.qty,0);
+  const el=$('cart-badge-el');
+  el.style.display=total?'flex':'none';el.textContent=total;
+}
+
+function openCart(){
+  renderCart();$('cart-overlay').classList.add('show');$('checkout-form').style.display='none';$('checkout-btn').style.display='block';
+}
+function closeCart(){$('cart-overlay').classList.remove('show');}
+
+function renderCart(){
+  $('cart-items').innerHTML=cart.length?cart.map((c,i)=>`
+    <div class="cart-item">
+      <img class="cart-item-img" src="${c.image||''}" onerror="this.style.display='none'">
+      <div class="cart-item-info"><div class="cart-item-name">${c.name}</div><div class="cart-item-price">${fmt(c.price)}</div></div>
+      <div class="qty-ctrl">
+        <button onclick="changeQty(${i},-1)">−</button>
+        <span>${c.qty}</span>
+        <button onclick="changeQty(${i},1)">+</button>
+      </div>
+    </div>`).join(''):'<p class="sub" style="text-align:center;padding:20px">Корзина пуста</p>';
+  $('cart-total').textContent=fmt(cart.reduce((s,c)=>s+c.price*c.qty,0));
+}
+
+function changeQty(i,d){cart[i].qty+=d;if(cart[i].qty<=0)cart.splice(i,1);renderCart();updateCartBadge();}
+function showCheckout(){if(!cart.length)return;$('checkout-form').style.display='block';$('checkout-btn').style.display='none';}
+
+// Phone mask
+const phoneInput=$('order-phone');
+phoneInput.addEventListener('input',function(){
+  let d=this.value.replace(/\D/g,'');
+  if(d.startsWith('7'))d=d.slice(1);if(d.startsWith('8'))d=d.slice(1);
+  d=d.slice(0,10);
+  let f='+7';
+  if(d.length>0)f+=' ('+d.slice(0,3);
+  if(d.length>=3)f+=') '+d.slice(3,6);
+  if(d.length>=6)f+='-'+d.slice(6,8);
+  if(d.length>=8)f+='-'+d.slice(8,10);
+  this.value=f;
+});
+phoneInput.addEventListener('focus',function(){if(!this.value)this.value='+7';});
+
+async function submitOrder(){
+  const name=$('order-name').value.trim();
+  const phone=$('order-phone').value.trim();
+  if(!name||phone.replace(/\D/g,'').length<11){toast('Заполните имя и телефон');return;}
+  try{
+    const items=cart.map(c=>({product_id:c.id,qty:c.qty}));
+    await api('/api/orders',{method:'POST',body:JSON.stringify({name,phone,items,partner_ref:partner.ref_code})});
+    cart=[];updateCartBadge();closeCart();toast('Заказ оформлен!');
+  }catch(e){toast('Ошибка при оформлении');}
+}
+
+// Tab catalog click opens cart
+document.querySelector('[data-page="catalog"]').addEventListener('click',function(e){
+  if(currentPage==='catalog'&&cart.length){openCart();e.stopPropagation();}
+});
+
+// TEAM
+async function loadTeam(){
+  if(!partner)return;
+  const p=partner,lvl=p.level||'member',tc=p.team_count||0;
+  $('team-count').textContent=tc;
+  $('team-badge').textContent=LEVEL_ICONS[lvl]+' '+LEVEL_NAMES[lvl];
+  const nextLvl=lvl==='member'?'manager':lvl==='manager'?'director':null;
+  const nextReq=nextLvl?LEVEL_REQ[nextLvl]:0;
+  const pct=nextReq?Math.min(100,Math.round(tc/nextReq*100)):100;
+  $('team-progress').style.width=pct+'%';
+  $('team-level-text').textContent=nextLvl?`До уровня "${LEVEL_NAMES[nextLvl]}" нужно ${nextReq-tc} чел.`:'Максимальный уровень';
+  const refLink=location.origin+'/ref/'+partner.ref_code;
+  $('team-ref-link').textContent=refLink;
+  try{
+    const lb=await api('/api/leaderboard');
+    $('leaderboard').innerHTML=(lb||[]).slice(0,15).map((r,i)=>`
+      <div class="leader-row"><span class="leader-pos">${i+1}</span><span class="leader-name">${r.name}</span><span class="leader-val">${r.team_count||r.score||0}</span></div>`).join('')||'<p class="sub">Нет данных</p>';
+  }catch(e){}
+}
+
+function copyRef(){
+  const link=location.origin+'/ref/'+partner.ref_code;
+  navigator.clipboard.writeText(link).then(()=>toast('Ссылка скопирована')).catch(()=>{});
+}
+function shareRef(){
+  if(tg.switchInlineQuery){try{tg.switchInlineQuery(partner.ref_code);return;}catch(e){}}
+  copyRef();
+}
+
+// SHOP
+async function loadShop(){
+  if(!partner)return;
+  const link=location.origin+'/shop/'+partner.ref_code;
+  $('shop-link').textContent=link;
+  try{
+    const sel=await api('/api/partner/shop-products');
+    shopSelected=new Set((sel||[]).map(s=>s.product_id||s.id));
+  }catch(e){}
+  renderShopProducts();
+}
+
+function renderShopProducts(){
+  $('shop-products').innerHTML=products.map(p=>`
+    <div class="shop-product">
+      <img src="${p.image||''}" onerror="this.style.display='none'">
+      <div class="shop-product-info"><div style="font-weight:600;font-size:.85rem">${p.name}</div><div class="sub">${fmt(p.price)}</div></div>
+      <label class="toggle"><input type="checkbox" ${shopSelected.has(p.id)?'checked':''} onchange="toggleShopProduct(${p.id},this.checked)"><span class="slider"></span></label>
+    </div>`).join('');
+}
+
+function toggleShopProduct(id,on){if(on)shopSelected.add(id);else shopSelected.delete(id);}
+async function saveShopProducts(){
+  try{
+    await api('/api/partner/shop-products',{method:'POST',body:JSON.stringify({product_ids:[...shopSelected]})});
+    toast('Магазин обновлён');
+  }catch(e){toast('Ошибка сохранения');}
+}
+function copyShopLink(){
+  navigator.clipboard.writeText(location.origin+'/shop/'+partner.ref_code).then(()=>toast('Ссылка скопирована')).catch(()=>{});
+}
+
+// PROFILE
+async function loadProfile(){
+  if(!partner)return;
+  const p=partner;
+  const date=p.created_at?new Date(p.created_at).toLocaleDateString('ru'):'—';
+  $('profile-info').innerHTML=`
+    <div style="text-align:center;margin-bottom:12px">
+      <div style="font-size:2.4rem">${LEVEL_ICONS[p.level||'member']}</div>
+      <div style="font-size:1.1rem;font-weight:800;margin-top:4px">${p.name||'—'}</div>
+      <div class="badge" style="margin-top:6px">${TARIFF_NAMES[p.tariff||'free']}</div>
+    </div>
+    <div class="info-row"><span class="info-label">Телефон</span><span class="info-val">${p.phone||'—'}</span></div>
+    <div class="info-row"><span class="info-label">Email</span><span class="info-val">${p.email||'—'}</span></div>
+    <div class="info-row"><span class="info-label">Город</span><span class="info-val">${p.city||'—'}</span></div>
+    <div class="info-row"><span class="info-label">Реф-код</span><span class="info-val">${p.ref_code||'—'}</span></div>
+    <div class="info-row"><span class="info-label">Регистрация</span><span class="info-val">${date}</span></div>`;
+
+  // Tariffs
+  if(!p.tariff||p.tariff==='free'){
+    $('tariff-section').innerHTML=`
+      <div class="card card-sm" style="margin-top:4px">
+        <div style="font-weight:700;margin-bottom:10px">🚀 Активировать тариф</div>
+        <div class="tariff-grid">
+          ${tariffCard('start','⚡ СТАРТ','5 000','Базовые инструменты')}
+          ${tariffCard('partner','🚀 ПАРТНЁР','15 000','Полный доступ',true)}
+          ${tariffCard('leader','👑 ЛИДЕР','30 000','Максимум возможностей')}
+        </div>
+      </div>`;
+  }else{$('tariff-section').innerHTML='';}
+
+  // Transactions
+  try{
+    const txs=await api('/api/partner/transactions');
+    $('tx-list').innerHTML=(txs||[]).slice(0,20).map(t=>`
+      <div class="tx-row">
+        <div><div>${t.description||t.type||'—'}</div><div class="tx-desc">${t.created_at?new Date(t.created_at).toLocaleDateString('ru'):''}</div></div>
+        <div class="tx-amount ${(t.amount||0)>=0?'plus':'minus'}">${(t.amount||0)>=0?'+':''}${fmt(t.amount)}</div>
+      </div>`).join('')||'<p class="sub">Нет транзакций</p>';
+  }catch(e){$('tx-list').innerHTML='<p class="sub">Не удалось загрузить</p>';}
+}
+
+function tariffCard(key,name,price,feat,hl){
+  return`<div class="tariff-card${hl?' highlight':''}">
+    <div style="font-weight:700;font-size:.95rem">${name}</div>
+    <div class="tariff-price">${Number(price).toLocaleString('ru')} ₸</div>
+    <div class="tariff-feat">${feat}</div>
+    <button class="btn btn-sm${hl?'':' btn-outline'}" onclick="buyTariff('${key}')">Активировать</button>
+  </div>`;
+}
+
+async function buyTariff(key){
+  try{
+    const res=await api('/api/partner/buy-tariff',{method:'POST',body:JSON.stringify({tariff:key})});
+    if(res.error){toast(res.error);return;}
+    toast('Тариф активирован!');
+    partner=await api('/api/partner/me');renderHome();loadProfile();
+  }catch(e){toast('Ошибка активации');}
+}
+
+// Init
+init();
+</script>
+</body>
+</html>

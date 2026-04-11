@@ -3,10 +3,13 @@
 
 import csv
 import hashlib
+import hmac
 import io
+import json as json_module
 import os
 import secrets
 import sqlite3
+import urllib.parse
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 
@@ -37,6 +40,15 @@ TARIFF_PRICES = {'start': 15_000, 'partner': 50_000, 'leader': 150_000}
 TARIFF_ORDER_COMM = {'start': 0.08, 'partner': 0.12, 'leader': 0.15}
 REF_BONUS_L1 = 0.03  # 3% from package purchase
 REF_BONUS_L2 = 0.01  # 1% from package purchase
+
+# Level system — auto-promoted by team size
+LEVEL_THRESHOLDS = {'manager': 10, 'director': 50}
+LEVEL_COMM = {
+    'manager': {'order': 0.15, 'l1': 0.04, 'l2': 0.02},
+    'director': {'order': 0.18, 'l1': 0.05, 'l2': 0.03},
+}
+LEVEL_NAMES = {'member': 'Участник', 'manager': 'Менеджер', 'director': 'Директор'}
+TG_BOT_USERNAME = os.environ.get('TELEGRAM_BOT_USERNAME', 'tulpar_kz_bot')
 
 app = Flask(__name__, static_folder='public', static_url_path='')
 CORS(app)
@@ -142,13 +154,69 @@ def init_db():
                 related_partner_id  INTEGER DEFAULT 0,
                 created_at          DATETIME DEFAULT CURRENT_TIMESTAMP
             );
+
+            CREATE TABLE IF NOT EXISTS partner_shop_products (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                partner_id  INTEGER NOT NULL,
+                product_id  INTEGER NOT NULL,
+                created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(partner_id, product_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS reviews (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                product_id  INTEGER NOT NULL,
+                customer_name TEXT NOT NULL,
+                rating      INTEGER NOT NULL,
+                text        TEXT    DEFAULT '',
+                created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS payouts (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                partner_id  INTEGER NOT NULL,
+                amount      INTEGER NOT NULL,
+                status      TEXT    DEFAULT 'pending',
+                notes       TEXT    DEFAULT '',
+                created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE TABLE IF NOT EXISTS checkins (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                partner_id  INTEGER NOT NULL,
+                date        TEXT    NOT NULL,
+                streak      INTEGER DEFAULT 1,
+                coins_earned INTEGER DEFAULT 10,
+                UNIQUE(partner_id, date)
+            );
+
+            CREATE TABLE IF NOT EXISTS shared_carts (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                code        TEXT    UNIQUE NOT NULL,
+                items       TEXT    NOT NULL,
+                partner_ref TEXT    DEFAULT '',
+                created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
         """)
         # Migrate existing tables
-        for col, default in [('password', '""'), ('balance', '0')]:
+        for col_sql in [
+            "ALTER TABLE partners ADD COLUMN password TEXT DEFAULT ''",
+            "ALTER TABLE partners ADD COLUMN balance INTEGER DEFAULT 0",
+            "ALTER TABLE partners ADD COLUMN level TEXT DEFAULT 'member'",
+            "ALTER TABLE partners ADD COLUMN telegram_chat_id TEXT DEFAULT ''",
+            "ALTER TABLE partners ADD COLUMN coins INTEGER DEFAULT 0",
+            "ALTER TABLE partners ADD COLUMN last_checkin TEXT DEFAULT ''",
+            "ALTER TABLE partners ADD COLUMN checkin_streak INTEGER DEFAULT 0",
+            "ALTER TABLE products ADD COLUMN partner_price INTEGER DEFAULT 0",
+            "ALTER TABLE products ADD COLUMN is_selected INTEGER DEFAULT 0",
+        ]:
             try:
-                conn.execute(f'ALTER TABLE partners ADD COLUMN {col} TEXT DEFAULT {default}' if col == 'password' else f'ALTER TABLE partners ADD COLUMN {col} INTEGER DEFAULT {default}')
+                conn.execute(col_sql)
             except sqlite3.OperationalError:
                 pass
+        try:
+            conn.execute('CREATE INDEX IF NOT EXISTS idx_partners_referrer ON partners(referrer)')
+        except Exception:
+            pass
         # Seed categories if empty
         if conn.execute('SELECT COUNT(*) FROM categories').fetchone()[0] == 0:
             conn.executemany(
@@ -234,6 +302,45 @@ def send_telegram(text):
         print(f'Telegram error: {e}')
 
 
+def send_partner_telegram(partner_id, text):
+    """Send notification to partner's personal Telegram if linked."""
+    if not TG_TOKEN or TG_TOKEN == 'your_telegram_bot_token_here':
+        return
+    try:
+        db = get_db()
+        row = db.execute('SELECT telegram_chat_id FROM partners WHERE id = ?', (partner_id,)).fetchone()
+        if not row or not row['telegram_chat_id']:
+            return
+        http_requests.post(
+            f'https://api.telegram.org/bot{TG_TOKEN}/sendMessage',
+            json={'chat_id': row['telegram_chat_id'], 'text': text, 'parse_mode': 'HTML'},
+            timeout=5,
+        )
+    except Exception as e:
+        print(f'Partner TG error: {e}')
+
+
+def check_and_update_level(db, partner_id):
+    """Auto-promote partner based on team size."""
+    row = db.execute('SELECT ref_code, level FROM partners WHERE id = ?', (partner_id,)).fetchone()
+    if not row:
+        return 'member'
+    team_count = db.execute('SELECT COUNT(*) FROM partners WHERE referrer = ?', (row['ref_code'],)).fetchone()[0]
+    new_level = 'member'
+    if team_count >= LEVEL_THRESHOLDS['director']:
+        new_level = 'director'
+    elif team_count >= LEVEL_THRESHOLDS['manager']:
+        new_level = 'manager'
+    if new_level != row['level']:
+        db.execute('UPDATE partners SET level = ? WHERE id = ?', (new_level, partner_id))
+        db.commit()
+        if new_level != 'member':
+            send_partner_telegram(partner_id,
+                f'🎉 <b>Поздравляем!</b>\nВы достигли уровня <b>{LEVEL_NAMES[new_level]}</b>!\n'
+                f'Новые комиссии: {int(LEVEL_COMM[new_level]["order"]*100)}% с заказов')
+    return new_level
+
+
 # ─── STATIC PAGES ───────────────────────────────────────────────────────
 
 @app.route('/')
@@ -264,6 +371,94 @@ def admin_page():
 @app.route('/catalog')
 def catalog_page():
     return send_from_directory(app.static_folder, 'catalog.html')
+
+
+@app.route('/shop/<ref_code>')
+def shop_page(ref_code):
+    return send_from_directory(app.static_folder, 'shop.html')
+
+
+@app.route('/tg-app')
+def tg_app_page():
+    return send_from_directory(app.static_folder, 'tg-app.html')
+
+
+# ─── API: TELEGRAM AUTH ─────────────────────────────────────────────────
+
+def validate_telegram_init_data(init_data_raw):
+    """Validate Telegram WebApp initData using HMAC-SHA-256."""
+    try:
+        parsed = dict(urllib.parse.parse_qsl(init_data_raw, keep_blank_values=True))
+        received_hash = parsed.pop('hash', '')
+        if not received_hash:
+            return None
+        data_check_string = '\n'.join(f'{k}={v}' for k, v in sorted(parsed.items()))
+        secret_key = hmac.new(b'WebAppData', TG_TOKEN.encode(), hashlib.sha256).digest()
+        calculated_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
+        if calculated_hash != received_hash:
+            return None
+        user_data = json_module.loads(parsed.get('user', '{}'))
+        return user_data
+    except Exception:
+        return None
+
+
+@app.post('/api/tg-auth')
+def api_tg_auth():
+    d = request.get_json(force=True) or {}
+    init_data = d.get('initData', '')
+
+    # Validate initData
+    user = validate_telegram_init_data(init_data)
+    if not user:
+        return jsonify({'error': 'Невалидные данные Telegram'}), 401
+
+    tg_id = str(user.get('id', ''))
+    if not tg_id:
+        return jsonify({'error': 'Нет Telegram ID'}), 401
+
+    db = get_db()
+
+    # Find partner by telegram_chat_id
+    partner = db.execute('SELECT * FROM partners WHERE telegram_chat_id = ?', (tg_id,)).fetchone()
+
+    if not partner:
+        # Auto-register from Telegram
+        first_name = user.get('first_name', 'Пользователь')
+        last_name = user.get('last_name', '')
+        name = f'{first_name} {last_name}'.strip()
+        username = user.get('username', '')
+        ref_code = 'TLP' + secrets.token_hex(3).upper()
+
+        # Check start_param for referrer
+        start_param = d.get('start_param', '')
+
+        db.execute(
+            'INSERT INTO partners (name, phone, password, tariff, ref_code, referrer, telegram_chat_id, status) '
+            'VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            (name, '', '', 'free', ref_code, start_param.upper() if start_param else '', tg_id, 'new'),
+        )
+        db.commit()
+        partner = db.execute('SELECT * FROM partners WHERE telegram_chat_id = ?', (tg_id,)).fetchone()
+
+        send_telegram(
+            f'🦅 <b>Новый партнёр через Mini App!</b>\n'
+            f'👤 {name}\n💬 @{username}\n🔗 Код: {ref_code}'
+        )
+
+    p = dict(partner)
+    token = create_token(p['id'])
+
+    return jsonify({
+        'success': True,
+        'token': token,
+        'partner': {
+            'id': p['id'],
+            'name': p['name'],
+            'tariff': p['tariff'],
+            'ref_code': p['ref_code'],
+        },
+    })
 
 
 # ─── API: REGISTER ──────────────────────────────────────────────────────
@@ -310,6 +505,14 @@ def api_register():
         + (f'\n👥 Реферер: {referrer}' if referrer else '')
         + f'\n⏰ {datetime.now().strftime("%d.%m.%Y %H:%M")}'
     )
+
+    # Check if referrer should level up + notify them
+    if referrer:
+        ref_partner = db.execute('SELECT id FROM partners WHERE ref_code = ?', (referrer,)).fetchone()
+        if ref_partner:
+            check_and_update_level(db, ref_partner['id'])
+            send_partner_telegram(ref_partner['id'],
+                f'👥 <b>Новый участник в команде!</b>\n{name} присоединился по вашей ссылке')
 
     return jsonify({'success': True, 'ref_code': ref_code, 'id': pid, 'message': 'Регистрация успешна!'})
 
@@ -427,7 +630,7 @@ def api_change_password():
 # ─── API: BUY TARIFF ─────────────────────────────────────────────────────
 
 def _credit_ref_bonus(db, buyer_id, buyer_name, tariff, price):
-    """Credit referral bonuses up to 2 levels."""
+    """Credit referral bonuses up to 2 levels, using level-based rates if higher."""
     buyer = db.execute('SELECT referrer FROM partners WHERE id = ?', (buyer_id,)).fetchone()
     if not buyer or not buyer['referrer']:
         return
@@ -435,33 +638,45 @@ def _credit_ref_bonus(db, buyer_id, buyer_name, tariff, price):
     # Level 1 referrer
     ref1 = db.execute('SELECT * FROM partners WHERE ref_code = ?', (buyer['referrer'],)).fetchone()
     if ref1 and ref1['tariff'] in ('partner', 'leader'):
-        bonus1 = int(price * REF_BONUS_L1)
+        l1_rate = REF_BONUS_L1
+        level1 = ref1['level'] if 'level' in ref1.keys() else 'member'
+        if level1 in LEVEL_COMM:
+            l1_rate = max(l1_rate, LEVEL_COMM[level1]['l1'])
+        bonus1 = int(price * l1_rate)
         if bonus1 > 0:
             db.execute('UPDATE partners SET balance = balance + ? WHERE id = ?', (bonus1, ref1['id']))
             db.execute(
                 'INSERT INTO transactions (partner_id, type, amount, description, related_partner_id) '
                 'VALUES (?, ?, ?, ?, ?)',
                 (ref1['id'], 'ref_bonus_l1', bonus1,
-                 f'Бонус 3% от пакета {tariff.upper()} ({buyer_name})', buyer_id),
+                 f'Бонус {int(l1_rate*100)}% от пакета {tariff.upper()} ({buyer_name})', buyer_id),
             )
             send_telegram(
                 f'💰 <b>Реферальный бонус!</b>\n'
-                f'👤 {ref1["name"]} получил <b>{bonus1:,} ₸</b> (3% от пакета {buyer_name})'
+                f'👤 {ref1["name"]} получил <b>{bonus1:,} ₸</b> ({int(l1_rate*100)}% от пакета {buyer_name})'
             )
+            send_partner_telegram(ref1['id'],
+                f'💰 <b>+{bonus1:,} ₸ бонус!</b>\n{buyer_name} купил пакет {tariff.upper()}')
 
         # Level 2 referrer
         if ref1['referrer']:
             ref2 = db.execute('SELECT * FROM partners WHERE ref_code = ?', (ref1['referrer'],)).fetchone()
             if ref2 and ref2['tariff'] in ('partner', 'leader'):
-                bonus2 = int(price * REF_BONUS_L2)
+                l2_rate = REF_BONUS_L2
+                level2 = ref2['level'] if 'level' in ref2.keys() else 'member'
+                if level2 in LEVEL_COMM:
+                    l2_rate = max(l2_rate, LEVEL_COMM[level2]['l2'])
+                bonus2 = int(price * l2_rate)
                 if bonus2 > 0:
                     db.execute('UPDATE partners SET balance = balance + ? WHERE id = ?', (bonus2, ref2['id']))
                     db.execute(
                         'INSERT INTO transactions (partner_id, type, amount, description, related_partner_id) '
                         'VALUES (?, ?, ?, ?, ?)',
                         (ref2['id'], 'ref_bonus_l2', bonus2,
-                         f'Бонус 1% (2 ур.) от пакета {tariff.upper()} ({buyer_name})', buyer_id),
+                         f'Бонус {int(l2_rate*100)}% (2 ур.) от пакета {tariff.upper()} ({buyer_name})', buyer_id),
                     )
+                    send_partner_telegram(ref2['id'],
+                        f'💰 <b>+{bonus2:,} ₸ бонус (2 ур.)!</b>\n{buyer_name} купил пакет')
 
 
 @app.post('/api/partner/buy-tariff')
@@ -536,6 +751,24 @@ def api_partner_me():
         'SELECT COUNT(*) FROM partners WHERE referrer = ?', (p['ref_code'],)
     ).fetchone()[0]
     p['teamCount'] = team_count
+
+    # Level system
+    level = check_and_update_level(db, request.partner_id)
+    p['level'] = level
+    p['levelName'] = LEVEL_NAMES.get(level, 'Участник')
+    if level == 'member':
+        p['nextLevelAt'] = LEVEL_THRESHOLDS['manager']
+    elif level == 'manager':
+        p['nextLevelAt'] = LEVEL_THRESHOLDS['director']
+    else:
+        p['nextLevelAt'] = None
+
+    # Effective commissions (level overrides tariff if higher)
+    tariff_comm = TARIFF_ORDER_COMM.get(p.get('tariff'), 0)
+    level_comm = LEVEL_COMM.get(level, {}).get('order', 0)
+    p['effectiveComm'] = max(tariff_comm, level_comm)
+
+    p['botUsername'] = TG_BOT_USERNAME
 
     return jsonify(p)
 
@@ -751,11 +984,14 @@ def api_create_order():
         + (f'\n🔗 Партнёр: {partner_ref}' if partner_ref else '')
     )
 
-    # Credit order commission to partner
+    # Credit order commission to partner (use level rate if higher)
     if partner_ref:
         ref_partner = db.execute('SELECT * FROM partners WHERE ref_code = ?', (partner_ref,)).fetchone()
         if ref_partner and ref_partner['tariff'] in TARIFF_ORDER_COMM:
             comm_rate = TARIFF_ORDER_COMM[ref_partner['tariff']]
+            p_level = ref_partner['level'] if 'level' in ref_partner.keys() else 'member'
+            if p_level in LEVEL_COMM and LEVEL_COMM[p_level]['order'] > comm_rate:
+                comm_rate = LEVEL_COMM[p_level]['order']
             commission = int(total * comm_rate)
             if commission > 0:
                 db.execute('UPDATE partners SET balance = balance + ? WHERE id = ?', (commission, ref_partner['id']))
@@ -765,6 +1001,8 @@ def api_create_order():
                      f'Комиссия {int(comm_rate*100)}% с заказа #{order_id} ({total:,} ₸)'),
                 )
                 db.commit()
+                send_partner_telegram(ref_partner['id'],
+                    f'🛒 <b>Новый заказ #{order_id}!</b>\nСумма: {total:,} ₸\nВаша комиссия: <b>+{commission:,} ₸</b>')
 
     return jsonify({'success': True, 'order_id': order_id, 'total': total})
 
@@ -932,6 +1170,467 @@ def api_admin_transactions():
         'LEFT JOIN partners p ON p.id = t.partner_id '
         'ORDER BY t.created_at DESC LIMIT 100'
     ).fetchall()
+    return jsonify([dict(r) for r in rows])
+
+
+# ─── API: SHOP ───────────────────────────────────────────────────────────
+
+@app.get('/api/shop/<ref_code>')
+def api_shop(ref_code):
+    db = get_db()
+    partner = db.execute(
+        'SELECT name, ref_code, city, level FROM partners WHERE ref_code = ?', (ref_code,)
+    ).fetchone()
+    if not partner:
+        return jsonify({'error': 'Магазин не найден'}), 404
+    p = dict(partner)
+    p['levelName'] = LEVEL_NAMES.get(p.get('level', 'member'), 'Участник')
+    pid = db.execute('SELECT id FROM partners WHERE ref_code = ?', (ref_code,)).fetchone()['id']
+    products = [dict(r) for r in db.execute(
+        'SELECT p.* FROM products p JOIN partner_shop_products sp ON sp.product_id = p.id '
+        'WHERE sp.partner_id = ? AND p.in_stock = 1', (pid,)
+    ).fetchall()]
+    # If partner has no products selected, show all
+    if not products:
+        products = [dict(r) for r in db.execute(
+            'SELECT * FROM products WHERE in_stock = 1 ORDER BY created_at DESC'
+        ).fetchall()]
+    return jsonify({'partner': p, 'products': products})
+
+
+@app.get('/api/partner/shop-products')
+@auth_required
+def api_get_shop_products():
+    db = get_db()
+    rows = db.execute(
+        'SELECT product_id FROM partner_shop_products WHERE partner_id = ?', (request.partner_id,)
+    ).fetchall()
+    return jsonify([r['product_id'] for r in rows])
+
+
+@app.post('/api/partner/shop-products')
+@auth_required
+def api_set_shop_products():
+    d = request.get_json(force=True) or {}
+    product_ids = d.get('product_ids', [])
+    db = get_db()
+    db.execute('DELETE FROM partner_shop_products WHERE partner_id = ?', (request.partner_id,))
+    for pid in product_ids:
+        db.execute(
+            'INSERT OR IGNORE INTO partner_shop_products (partner_id, product_id) VALUES (?, ?)',
+            (request.partner_id, int(pid)),
+        )
+    db.commit()
+    return jsonify({'success': True, 'count': len(product_ids)})
+
+
+# ─── API: LEADERBOARD ───────────────────────────────────────────────────
+
+@app.get('/api/leaderboard')
+def api_leaderboard():
+    db = get_db()
+    rows = db.execute('''
+        SELECT p.name, p.city, p.ref_code, p.level,
+               (SELECT COUNT(*) FROM partners r WHERE r.referrer = p.ref_code) as team_count
+        FROM partners p
+        WHERE p.tariff != 'free'
+        ORDER BY team_count DESC
+        LIMIT 10
+    ''').fetchall()
+    result = []
+    for r in rows:
+        d = dict(r)
+        d['levelName'] = LEVEL_NAMES.get(d.get('level', 'member'), 'Участник')
+        result.append(d)
+    return jsonify(result)
+
+
+# ─── API: TELEGRAM BOT WEBHOOK ──────────────────────────────────────────
+
+@app.post('/api/telegram/webhook')
+def api_telegram_webhook():
+    data = request.get_json(force=True) or {}
+    message = data.get('message', {})
+    chat_id = str(message.get('chat', {}).get('id', ''))
+    text = (message.get('text') or '').strip()
+
+    if not chat_id or not text:
+        return jsonify({'ok': True})
+
+    db = get_db()
+    APP_URL = request.host_url.rstrip('/')
+
+    def reply(msg, keyboard=None):
+        payload = {'chat_id': chat_id, 'text': msg, 'parse_mode': 'HTML'}
+        if keyboard:
+            payload['reply_markup'] = keyboard
+        try:
+            http_requests.post(f'https://api.telegram.org/bot{TG_TOKEN}/sendMessage', json=payload, timeout=5)
+        except Exception:
+            pass
+
+    # /start — with or without ref code
+    if text.startswith('/start'):
+        parts = text.split()
+        ref_code = parts[1].upper() if len(parts) > 1 else ''
+
+        # Link account if ref_code provided
+        if ref_code:
+            partner = db.execute('SELECT id, name FROM partners WHERE ref_code = ?', (ref_code,)).fetchone()
+            if partner:
+                db.execute('UPDATE partners SET telegram_chat_id = ? WHERE id = ?', (chat_id, partner['id']))
+                db.commit()
+
+        # Send welcome with Mini App button
+        reply(
+            '🦅 <b>Добро пожаловать в TULPAR!</b>\n\n'
+            'Зарабатывай продавая то, что любишь.\n'
+            'Нажми кнопку ниже чтобы открыть приложение.',
+            {'inline_keyboard': [[{
+                'text': '🚀 Открыть TULPAR',
+                'web_app': {'url': f'{APP_URL}/tg-app'}
+            }]]}
+        )
+        return jsonify({'ok': True})
+
+    # /balance
+    if text == '/balance':
+        partner = db.execute('SELECT name, balance, level FROM partners WHERE telegram_chat_id = ?', (chat_id,)).fetchone()
+        if partner:
+            reply(f'💰 <b>{partner["name"]}</b>\n\nБаланс: <b>{partner["balance"]:,} ₸</b>\nУровень: {LEVEL_NAMES.get(partner["level"], "Участник")}')
+        else:
+            reply('Вы ещё не зарегистрированы. Нажмите /start')
+        return jsonify({'ok': True})
+
+    # /shop
+    if text == '/shop':
+        partner = db.execute('SELECT name, ref_code FROM partners WHERE telegram_chat_id = ?', (chat_id,)).fetchone()
+        if partner:
+            reply(
+                f'🏪 <b>Ваш магазин:</b>\n{APP_URL}/shop/{partner["ref_code"]}\n\n'
+                f'Отправьте эту ссылку друзьям — заказы будут привязаны к вам!',
+            )
+        else:
+            reply('Вы ещё не зарегистрированы. Нажмите /start')
+        return jsonify({'ok': True})
+
+    # /help
+    if text == '/help':
+        reply(
+            '📋 <b>Команды бота:</b>\n\n'
+            '/start — Открыть TULPAR\n'
+            '/balance — Баланс и уровень\n'
+            '/shop — Ваш магазин\n'
+            '/help — Список команд'
+        )
+        return jsonify({'ok': True})
+
+    return jsonify({'ok': True})
+
+
+@app.get('/api/config')
+def api_config():
+    return jsonify({'botUsername': TG_BOT_USERNAME})
+
+
+# ─── API: REVIEWS ────────────────────────────────────────────────────────
+
+@app.get('/api/products/<int:pid>/reviews')
+def api_get_reviews(pid):
+    db = get_db()
+    rows = [dict(r) for r in db.execute(
+        'SELECT * FROM reviews WHERE product_id = ? ORDER BY created_at DESC', (pid,)
+    ).fetchall()]
+    avg = db.execute('SELECT AVG(rating) FROM reviews WHERE product_id = ?', (pid,)).fetchone()[0]
+    count = len(rows)
+    return jsonify({'reviews': rows, 'avg_rating': round(avg, 1) if avg else 0, 'count': count})
+
+
+@app.post('/api/products/<int:pid>/reviews')
+def api_add_review(pid):
+    d = request.get_json(force=True) or {}
+    name = (d.get('name') or '').strip()
+    rating = int(d.get('rating') or 0)
+    text = (d.get('text') or '').strip()
+    if not name or rating < 1 or rating > 5:
+        return jsonify({'error': 'Укажите имя и оценку от 1 до 5'}), 400
+    db = get_db()
+    db.execute(
+        'INSERT INTO reviews (product_id, customer_name, rating, text) VALUES (?, ?, ?, ?)',
+        (pid, name, rating, text),
+    )
+    db.commit()
+    return jsonify({'success': True})
+
+
+@app.get('/api/products/ratings')
+def api_product_ratings():
+    db = get_db()
+    rows = db.execute(
+        'SELECT product_id, AVG(rating) as avg_rating, COUNT(*) as count '
+        'FROM reviews GROUP BY product_id'
+    ).fetchall()
+    return jsonify({str(r['product_id']): {'avg': round(r['avg_rating'], 1), 'count': r['count']} for r in rows})
+
+
+# ─── API: REFERRAL TREE ─────────────────────────────────────────────────
+
+@app.get('/api/partner/team-tree')
+@auth_required
+def api_team_tree():
+    db = get_db()
+    partner = db.execute('SELECT ref_code, name FROM partners WHERE id = ?', (request.partner_id,)).fetchone()
+    if not partner:
+        return jsonify({'tree': []})
+
+    def get_children(ref_code, depth=0):
+        if depth > 3:
+            return []
+        children = db.execute(
+            'SELECT id, name, phone, city, tariff, ref_code, level, created_at '
+            'FROM partners WHERE referrer = ? ORDER BY created_at DESC', (ref_code,)
+        ).fetchall()
+        result = []
+        for c in children:
+            c = dict(c)
+            c['levelName'] = LEVEL_NAMES.get(c.get('level', 'member'), 'Участник')
+            c['children'] = get_children(c['ref_code'], depth + 1)
+            c['childCount'] = len(c['children'])
+            result.append(c)
+        return result
+
+    tree = get_children(partner['ref_code'])
+    total_l1 = len(tree)
+    total_l2 = sum(len(c['children']) for c in tree)
+    total_l3 = sum(sum(len(gc['children']) for gc in c['children']) for c in tree)
+
+    return jsonify({
+        'tree': tree,
+        'stats': {'l1': total_l1, 'l2': total_l2, 'l3': total_l3, 'total': total_l1 + total_l2 + total_l3}
+    })
+
+
+# ─── API: PAYOUTS ────────────────────────────────────────────────────────
+
+@app.post('/api/partner/request-payout')
+@auth_required
+def api_request_payout():
+    db = get_db()
+    partner = db.execute('SELECT id, name, balance FROM partners WHERE id = ?', (request.partner_id,)).fetchone()
+    if not partner or partner['balance'] < 5000:
+        return jsonify({'error': 'Минимальная сумма для вывода: 5,000 ₸'}), 400
+
+    # Check no pending payouts
+    pending = db.execute(
+        "SELECT COUNT(*) FROM payouts WHERE partner_id = ? AND status = 'pending'",
+        (request.partner_id,)
+    ).fetchone()[0]
+    if pending > 0:
+        return jsonify({'error': 'У вас уже есть заявка на вывод в обработке'}), 400
+
+    amount = partner['balance']
+    db.execute(
+        'INSERT INTO payouts (partner_id, amount, status) VALUES (?, ?, ?)',
+        (request.partner_id, amount, 'pending'),
+    )
+    db.execute('UPDATE partners SET balance = 0 WHERE id = ?', (request.partner_id,))
+    db.execute(
+        'INSERT INTO transactions (partner_id, type, amount, description) VALUES (?, ?, ?, ?)',
+        (request.partner_id, 'payout', -amount, f'Запрос на вывод {amount:,} ₸'),
+    )
+    db.commit()
+
+    send_telegram(
+        f'💸 <b>Запрос на вывод!</b>\n\n'
+        f'👤 {partner["name"]}\n💰 Сумма: <b>{amount:,} ₸</b>\n'
+        f'Подтвердите выплату в админке.'
+    )
+
+    return jsonify({'success': True, 'amount': amount, 'message': f'Заявка на {amount:,} ₸ отправлена!'})
+
+
+@app.get('/api/partner/payouts')
+@auth_required
+def api_partner_payouts():
+    db = get_db()
+    rows = [dict(r) for r in db.execute(
+        'SELECT * FROM payouts WHERE partner_id = ? ORDER BY created_at DESC', (request.partner_id,)
+    ).fetchall()]
+    return jsonify(rows)
+
+
+@app.get('/api/admin/payouts')
+@admin_required
+def api_admin_payouts():
+    db = get_db()
+    rows = db.execute(
+        'SELECT p.*, pr.name as partner_name, pr.phone as partner_phone '
+        'FROM payouts p JOIN partners pr ON pr.id = p.partner_id '
+        'ORDER BY p.created_at DESC'
+    ).fetchall()
+    return jsonify([dict(r) for r in rows])
+
+
+@app.patch('/api/admin/payouts/<int:pid>')
+@admin_required
+def api_update_payout(pid):
+    d = request.get_json(force=True) or {}
+    status = d.get('status', '')
+    if status not in ('approved', 'rejected'):
+        return jsonify({'error': 'Статус: approved или rejected'}), 400
+
+    db = get_db()
+    payout = db.execute('SELECT * FROM payouts WHERE id = ?', (pid,)).fetchone()
+    if not payout:
+        return jsonify({'error': 'Выплата не найдена'}), 404
+
+    db.execute('UPDATE payouts SET status = ? WHERE id = ?', (status, pid))
+
+    if status == 'rejected':
+        # Return balance
+        db.execute('UPDATE partners SET balance = balance + ? WHERE id = ?',
+                   (payout['amount'], payout['partner_id']))
+        db.execute(
+            'INSERT INTO transactions (partner_id, type, amount, description) VALUES (?, ?, ?, ?)',
+            (payout['partner_id'], 'payout_refund', payout['amount'], 'Возврат: заявка отклонена'),
+        )
+
+    db.commit()
+
+    status_text = 'одобрена ✅' if status == 'approved' else 'отклонена ❌'
+    send_partner_telegram(payout['partner_id'],
+        f'💸 Ваша заявка на {payout["amount"]:,} ₸ {status_text}')
+
+    return jsonify({'success': True})
+
+
+# ─── API: DAILY CHECK-IN + COINS ─────────────────────────────────────────
+
+CHECKIN_REWARDS = {1: 10, 2: 10, 3: 15, 4: 15, 5: 20, 6: 20, 7: 50}  # day → coins
+
+
+@app.post('/api/partner/checkin')
+@auth_required
+def api_checkin():
+    db = get_db()
+    today = datetime.now().strftime('%Y-%m-%d')
+    yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+
+    # Already checked in today?
+    existing = db.execute(
+        'SELECT * FROM checkins WHERE partner_id = ? AND date = ?',
+        (request.partner_id, today),
+    ).fetchone()
+    if existing:
+        return jsonify({'error': 'Вы уже отметились сегодня', 'already': True}), 400
+
+    # Calculate streak
+    partner = db.execute('SELECT last_checkin, checkin_streak FROM partners WHERE id = ?', (request.partner_id,)).fetchone()
+    streak = 1
+    if partner['last_checkin'] == yesterday:
+        streak = (partner['checkin_streak'] % 7) + 1
+    coins = CHECKIN_REWARDS.get(streak, 10)
+
+    db.execute(
+        'INSERT INTO checkins (partner_id, date, streak, coins_earned) VALUES (?, ?, ?, ?)',
+        (request.partner_id, today, streak, coins),
+    )
+    db.execute(
+        'UPDATE partners SET coins = coins + ?, last_checkin = ?, checkin_streak = ? WHERE id = ?',
+        (coins, today, streak, request.partner_id),
+    )
+    db.commit()
+
+    return jsonify({'success': True, 'coins': coins, 'streak': streak, 'message': f'+{coins} монет! Серия: {streak} дней'})
+
+
+@app.get('/api/partner/checkin-status')
+@auth_required
+def api_checkin_status():
+    db = get_db()
+    today = datetime.now().strftime('%Y-%m-%d')
+    partner = db.execute(
+        'SELECT coins, last_checkin, checkin_streak FROM partners WHERE id = ?', (request.partner_id,)
+    ).fetchone()
+    checked_today = db.execute(
+        'SELECT id FROM checkins WHERE partner_id = ? AND date = ?', (request.partner_id, today)
+    ).fetchone() is not None
+    return jsonify({
+        'coins': partner['coins'],
+        'streak': partner['checkin_streak'],
+        'checkedToday': checked_today,
+        'rewards': CHECKIN_REWARDS,
+    })
+
+
+# ─── API: COINS SPEND ───────────────────────────────────────────────────
+
+@app.post('/api/orders/use-coins')
+def api_use_coins_order():
+    """Create order with coin discount. Coins sent in body."""
+    d = request.get_json(force=True) or {}
+    use_coins = int(d.get('use_coins') or 0)
+    partner_ref = (d.get('partner_ref') or '').strip().upper()
+
+    if use_coins > 0 and partner_ref:
+        db = get_db()
+        partner = db.execute('SELECT id, coins FROM partners WHERE ref_code = ?', (partner_ref,)).fetchone()
+        if partner and partner['coins'] >= use_coins:
+            db.execute('UPDATE partners SET coins = coins - ? WHERE id = ?', (use_coins, partner['id']))
+            db.commit()
+
+    # Delegate to normal order creation — coins are already deducted as discount
+    return api_create_order()
+
+
+# ─── API: SHARED CART ────────────────────────────────────────────────────
+
+@app.post('/api/cart/share')
+def api_share_cart():
+    d = request.get_json(force=True) or {}
+    items = d.get('items', [])
+    partner_ref = (d.get('partner_ref') or '').strip()
+    if not items:
+        return jsonify({'error': 'Корзина пуста'}), 400
+    code = secrets.token_hex(4)
+    db = get_db()
+    db.execute(
+        'INSERT INTO shared_carts (code, items, partner_ref) VALUES (?, ?, ?)',
+        (code, json_module.dumps(items), partner_ref),
+    )
+    db.commit()
+    return jsonify({'success': True, 'code': code, 'url': f'/catalog?cart={code}'})
+
+
+@app.get('/api/cart/<code>')
+def api_get_shared_cart(code):
+    db = get_db()
+    row = db.execute('SELECT * FROM shared_carts WHERE code = ?', (code,)).fetchone()
+    if not row:
+        return jsonify({'error': 'Корзина не найдена'}), 404
+    return jsonify({
+        'items': json_module.loads(row['items']),
+        'partner_ref': row['partner_ref'],
+    })
+
+
+# ─── API: REORDER ────────────────────────────────────────────────────────
+
+@app.get('/api/partner/reorder')
+@auth_required
+def api_reorder():
+    db = get_db()
+    partner = db.execute('SELECT ref_code FROM partners WHERE id = ?', (request.partner_id,)).fetchone()
+    if not partner:
+        return jsonify([])
+    # Get products from past orders by this partner's ref_code
+    rows = db.execute('''
+        SELECT DISTINCT p.* FROM products p
+        JOIN order_items oi ON oi.product_id = p.id
+        JOIN orders o ON o.id = oi.order_id
+        WHERE o.partner_ref = ? AND p.in_stock = 1
+        ORDER BY o.created_at DESC LIMIT 20
+    ''', (partner['ref_code'],)).fetchall()
     return jsonify([dict(r) for r in rows])
 
 

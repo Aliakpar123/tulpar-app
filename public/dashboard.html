@@ -96,7 +96,21 @@
     .tx-amount.positive { color:var(--green); font-weight:700; }
     .tx-amount.negative { color:#FF8FA0; font-weight:700; }
     .tx-desc { color:var(--muted); font-size:0.8rem; margin-top:0.2rem; }
-    @media(max-width:800px) { .layout{grid-template-columns:1fr}; aside{display:none}; .stats-grid{grid-template-columns:1fr 1fr}; .comm-grid{grid-template-columns:1fr}; .tariff-cards-grid{grid-template-columns:1fr}; }
+    /* MOBILE BOTTOM NAV */
+    .mobile-nav { display:none; position:fixed; bottom:0; left:0; right:0; background:var(--dark2); border-top:1px solid var(--border); z-index:20; padding:0.4rem 0; }
+    .mobile-nav-inner { display:flex; justify-content:space-around; }
+    .mob-tab { background:none; border:none; color:var(--muted); font-size:0.65rem; text-align:center; cursor:pointer; padding:0.3rem 0; flex:1; }
+    .mob-tab .mob-icon { font-size:1.2rem; display:block; margin-bottom:0.15rem; }
+    .mob-tab.active { color:var(--primary); }
+    @media(max-width:800px) {
+      .layout{grid-template-columns:1fr!important;} aside{display:none!important;} .stats-grid{grid-template-columns:1fr 1fr;} .comm-grid{grid-template-columns:1fr;} .tariff-cards-grid{grid-template-columns:1fr;}
+      .mobile-nav{display:block;}
+      main{padding:1.5rem 4% 5rem;}
+      nav .partner-badge{display:none;}
+      nav .nav-right{gap:0.5rem;}
+      .btn-logout{font-size:0.75rem;padding:0.3rem 0.5rem;}
+      .ref-code{font-size:1.3rem!important;letter-spacing:1px!important;}
+    }
     /* CARDS PAGE */
     .templates-row { display:flex; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap; }
     .tpl-btn { flex:1; min-width:140px; background:var(--card); border:2px solid var(--border); border-radius:12px; padding:1rem; cursor:pointer; text-align:center; transition:all 0.2s; color:var(--white); }
@@ -109,6 +123,54 @@
     .btn-download { background:linear-gradient(135deg,var(--primary),#7B1FA2); color:#fff; border:none; padding:0.75rem 2rem; border-radius:10px; font-weight:700; cursor:pointer; font-size:0.95rem; }
     .btn-tg { background:linear-gradient(135deg,#2AABEE,#1a8cc0); color:#fff; border:none; padding:0.75rem 2rem; border-radius:10px; font-weight:700; cursor:pointer; font-size:0.95rem; }
     .msg-box { width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:10px; padding:1rem; font-size:0.85rem; line-height:1.7; color:var(--white); font-family:inherit; resize:none; }
+    /* SHOP */
+    .shop-product-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-bottom:1.5rem; }
+    .shop-product-item { background:var(--card); border:2px solid var(--border); border-radius:14px; padding:1rem; cursor:pointer; transition:all 0.2s; text-align:center; position:relative; }
+    .shop-product-item:hover { border-color:rgba(245,166,35,0.4); }
+    .shop-product-item.selected { border-color:var(--primary); background:rgba(212,33,61,0.08); }
+    .shop-product-item img { width:100%; aspect-ratio:1; object-fit:cover; border-radius:10px; margin-bottom:0.6rem; background:rgba(255,255,255,0.05); }
+    .shop-product-item .sp-name { font-size:0.85rem; font-weight:600; margin-bottom:0.3rem; }
+    .shop-product-item .sp-price { font-size:0.8rem; color:var(--gold); font-weight:700; }
+    .shop-product-item .sp-check { position:absolute; top:8px; right:8px; width:22px; height:22px; border-radius:50%; border:2px solid var(--border); background:var(--dark2); display:flex; align-items:center; justify-content:center; font-size:0.7rem; }
+    .shop-product-item.selected .sp-check { background:var(--primary); border-color:var(--primary); }
+    /* ACADEMY */
+    .lesson-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; margin-bottom:2rem; }
+    .lesson-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:1.2rem; cursor:pointer; transition:all 0.2s; }
+    .lesson-card:hover { border-color:var(--gold); transform:translateY(-2px); }
+    .lesson-card .lc-icon { font-size:1.8rem; margin-bottom:0.5rem; }
+    .lesson-card .lc-title { font-size:0.95rem; font-weight:700; margin-bottom:0.3rem; }
+    .lesson-card .lc-desc { font-size:0.8rem; color:var(--muted); }
+    .lesson-card .lc-video { margin-top:1rem; display:none; border-radius:10px; overflow:hidden; }
+    .lesson-card .lc-video.open { display:block; }
+    .lesson-card .lc-video iframe { width:100%; aspect-ratio:16/9; border:none; border-radius:10px; }
+    .leaderboard-table { width:100%; border-collapse:collapse; margin-bottom:2rem; }
+    .leaderboard-table th { text-align:left; padding:0.7rem 1rem; font-size:0.8rem; color:var(--muted); border-bottom:1px solid var(--border); font-weight:600; }
+    .leaderboard-table td { padding:0.7rem 1rem; font-size:0.9rem; border-bottom:1px solid rgba(255,255,255,0.05); }
+    .leaderboard-table tr:hover { background:rgba(255,255,255,0.03); }
+    .leaderboard-table .lb-rank { font-weight:900; color:var(--gold); width:40px; }
+    .leaderboard-table .lb-level { font-size:0.75rem; padding:0.2rem 0.6rem; border-radius:12px; font-weight:600; }
+    @media(max-width:800px) {
+      .shop-product-grid{grid-template-columns:1fr 1fr;}
+      .lesson-grid{grid-template-columns:1fr;}
+    }
+    /* TEAM TREE */
+    .tree-node { border-left:2px solid var(--border); padding:0.8rem 0 0.8rem 1.2rem; margin-left:0.5rem; }
+    .tree-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:0.8rem 1rem; margin-bottom:0.5rem; display:flex; justify-content:space-between; align-items:center; }
+    .tree-name { font-weight:600; font-size:0.9rem; }
+    .tree-meta { font-size:0.75rem; color:var(--muted); }
+    .tree-badge { font-size:0.7rem; padding:0.15rem 0.5rem; border-radius:10px; }
+    .tree-toggle { background:none; border:none; color:var(--muted); cursor:pointer; font-size:0.8rem; }
+    .tree-children { display:none; }
+    .tree-children.open { display:block; }
+    /* PAYOUT */
+    .payout-item { display:flex; justify-content:space-between; align-items:center; padding:0.8rem 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:0.9rem; }
+    .payout-item:last-child { border-bottom:none; }
+    .payout-badge { font-size:0.75rem; padding:0.2rem 0.6rem; border-radius:10px; font-weight:600; }
+    .payout-badge.pending { background:rgba(245,166,35,0.2); color:var(--gold); }
+    .payout-badge.approved { background:rgba(39,174,96,0.2); color:var(--green); }
+    .payout-badge.rejected { background:rgba(212,33,61,0.2); color:#FF8FA0; }
+    .btn-payout { background:linear-gradient(135deg,var(--green),#1e8a4c); color:#fff; border:none; padding:0.7rem 1.5rem; border-radius:10px; font-weight:700; cursor:pointer; font-size:0.95rem; margin-top:0.8rem; }
+    .btn-payout:hover { opacity:0.9; }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
@@ -134,8 +196,12 @@
       <button class="side-nav-item active" onclick="showPage('overview')"><span class="icon">📊</span> Обзор</button>
       <button class="side-nav-item" onclick="showPage('tariff')"><span class="icon">💎</span> Тариф</button>
       <button class="side-nav-item" onclick="showPage('reflink')"><span class="icon">🔗</span> Реф. ссылка</button>
+      <button class="side-nav-item" onclick="showPage('teamtree')"><span class="icon">🌳</span> Моя команда</button>
       <button class="side-nav-item" onclick="showPage('income')"><span class="icon">💰</span> Мой доход</button>
+      <button class="side-nav-item" onclick="showPage('reorder')"><span class="icon">🔄</span> Купить снова</button>
       <button class="side-nav-item" onclick="showPage('cards')"><span class="icon">🎨</span> Карточки</button>
+      <button class="side-nav-item" onclick="showPage('shop')"><span class="icon">🏪</span> Мой магазин</button>
+      <button class="side-nav-item" onclick="showPage('academy')"><span class="icon">🎓</span> Академия</button>
       <button class="side-nav-item" onclick="showPage('profile')"><span class="icon">👤</span> Профиль</button>
       <button class="side-nav-item" onclick="showPage('history')"><span class="icon">📋</span> История</button>
     </nav>
@@ -158,11 +224,44 @@
 
       <div id="freeBannerWrap"></div>
 
-      <div class="stats-grid" style="grid-template-columns:1fr;margin-bottom:1rem;">
+      <div id="checkinCard" style="background:linear-gradient(135deg,rgba(39,174,96,0.15),rgba(245,166,35,0.1));border:1px solid rgba(39,174,96,0.3);border-radius:16px;padding:1.2rem;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:0.8rem;color:var(--muted);">Ежедневный бонус</div>
+          <div id="checkinStatus" style="font-size:1rem;font-weight:700;margin-top:0.3rem;">Загрузка...</div>
+          <div id="checkinStreak" style="font-size:0.75rem;color:var(--muted);margin-top:0.2rem;"></div>
+        </div>
+        <button id="checkinBtn" onclick="doCheckin()" style="background:var(--green);color:#fff;border:none;padding:0.6rem 1.2rem;border-radius:10px;font-weight:700;cursor:pointer;font-size:0.9rem;">✨ Отметиться</button>
+      </div>
+
+      <div class="level-card" id="levelCard" style="background:linear-gradient(135deg,rgba(245,166,35,0.15),rgba(212,33,61,0.1));border:1px solid rgba(245,166,35,0.3);border-radius:16px;padding:1.5rem;margin-bottom:2rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+          <div>
+            <div style="font-size:0.8rem;color:var(--muted);">Ваш уровень</div>
+            <div id="levelBadge" style="font-size:1.5rem;font-weight:900;color:var(--gold);">Участник</div>
+          </div>
+          <div id="levelIcon" style="font-size:2.5rem;">⭐</div>
+        </div>
+        <div style="margin-bottom:0.5rem;">
+          <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--muted);margin-bottom:0.3rem;">
+            <span>Прогресс</span><span id="levelProgress">0/10</span>
+          </div>
+          <div style="background:rgba(255,255,255,0.1);border-radius:8px;height:8px;overflow:hidden;">
+            <div id="levelBar" style="background:linear-gradient(90deg,var(--primary),var(--gold));height:100%;border-radius:8px;width:0%;transition:width 0.5s;"></div>
+          </div>
+        </div>
+        <div id="levelNextText" style="font-size:0.8rem;color:var(--muted);margin-top:0.5rem;"></div>
+      </div>
+
+      <div class="stats-grid" style="grid-template-columns:1fr 1fr;margin-bottom:1rem;">
         <div class="stat-card">
           <div class="stat-label">Баланс</div>
           <div class="stat-value gold" id="statBalance">0 ₸</div>
           <div class="stat-sub">Ваш текущий баланс</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Монеты</div>
+          <div class="stat-value" id="statCoins" style="color:var(--gold);">0</div>
+          <div class="stat-sub">1 монета = 1 ₸ скидка</div>
         </div>
       </div>
 
@@ -316,6 +415,45 @@
       </div>
     </div>
 
+    <!-- SHOP -->
+    <div class="page" id="page-shop">
+      <h2>Мой магазин 🏪</h2>
+      <p class="page-sub">Настройте свой персональный магазин и делитесь ссылкой с клиентами</p>
+
+      <div class="ref-card">
+        <div class="ref-title">🔗 Ссылка на ваш магазин</div>
+        <div class="ref-link-wrap">
+          <div class="ref-link" id="shopLinkText">—</div>
+          <button class="copy-btn" onclick="copyShopLink()">Скопировать ссылку</button>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <div class="section-title">📦 Выберите товары для вашего магазина</div>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem;">Отметьте товары, которые хотите показывать в вашем магазине</p>
+        <div class="shop-product-grid" id="shopProductGrid">
+          <div class="loading">Загрузка товаров...</div>
+        </div>
+        <button onclick="saveShopProducts()" style="background:linear-gradient(135deg,var(--primary),#7B1FA2);color:#fff;border:none;padding:0.75rem 2rem;border-radius:10px;font-weight:700;cursor:pointer;font-size:0.95rem;margin-top:1rem;">💾 Сохранить выбор</button>
+      </div>
+    </div>
+
+    <!-- ACADEMY -->
+    <div class="page" id="page-academy">
+      <h2>Академия TULPAR 🎓</h2>
+      <p class="page-sub">Обучение, рейтинг партнёров и полезные материалы</p>
+
+      <div class="info-card">
+        <div class="section-title">🏆 Топ-10 партнёров</div>
+        <div id="leaderboardWrap">
+          <div class="loading">Загрузка рейтинга...</div>
+        </div>
+      </div>
+
+      <div class="section-title" style="margin-top:2rem;">📚 Обучающие материалы</div>
+      <div class="lesson-grid" id="lessonGrid"></div>
+    </div>
+
     <!-- PROFILE -->
     <div class="page" id="page-profile">
       <h2>Мой профиль</h2>
@@ -336,6 +474,52 @@
           <button onclick="changePassword()" style="background:var(--primary);color:#fff;border:none;padding:0.7rem 1.5rem;border-radius:10px;font-weight:700;cursor:pointer;font-size:0.9rem;">Сменить пароль</button>
           <div id="pwMsg" style="margin-top:0.8rem;font-size:0.85rem;display:none;"></div>
         </div>
+      </div>
+
+      <div class="info-card" style="margin-top:1.5rem;">
+        <div class="section-title">📱 Telegram уведомления</div>
+        <div id="tgLinkSection"></div>
+      </div>
+
+      <div class="info-card" style="margin-top:1.5rem;">
+        <div class="section-title">💸 Вывод средств</div>
+        <div id="payoutSection"></div>
+      </div>
+    </div>
+
+    <!-- TEAM TREE -->
+    <div class="page" id="page-teamtree">
+      <h2>Моя команда 🌳</h2>
+      <p class="page-sub">Ваша реферальная структура</p>
+      <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:2rem;">
+        <div class="stat-card">
+          <div class="stat-label">Уровень 1</div>
+          <div class="stat-value green" id="treeStatL1">0</div>
+          <div class="stat-sub">Прямые рефералы</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Уровень 2</div>
+          <div class="stat-value gold" id="treeStatL2">0</div>
+          <div class="stat-sub">Их рефералы</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Всего в команде</div>
+          <div class="stat-value" id="treeStatTotal">0</div>
+          <div class="stat-sub">Все уровни</div>
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="section-title">🌳 Структура команды</div>
+        <div id="treeContainer"><div class="loading">Загрузка дерева...</div></div>
+      </div>
+    </div>
+
+    <!-- REORDER -->
+    <div class="page" id="page-reorder">
+      <h2>Купить снова</h2>
+      <p class="page-sub">Товары из ваших прошлых заказов</p>
+      <div class="shop-product-grid" id="reorderGrid">
+        <div class="loading">Загрузка...</div>
       </div>
     </div>
 
@@ -419,8 +603,12 @@
     };
     document.getElementById('incomeCalc').innerHTML = calcHtml[partner.tariff] || '';
 
-    // Balance
+    // Balance & coins
     document.getElementById('statBalance').textContent = (partner.balance || 0).toLocaleString('ru') + ' ₸';
+    document.getElementById('statCoins').textContent = (partner.coins || 0).toLocaleString('ru');
+
+    // Check-in
+    loadCheckinStatus();
 
     // Free banner
     const bannerWrap = document.getElementById('freeBannerWrap');
@@ -444,6 +632,52 @@
       <div class="info-row"><span class="info-label">Партнёров привлечено</span><span class="info-val" style="color:var(--green)">${partner.teamCount||0}</span></div>
       <div class="info-row"><span class="info-label">Дата регистрации</span><span class="info-val">${new Date(partner.created_at).toLocaleDateString('ru-RU')}</span></div>
     `;
+
+    // Level card
+    const levelName = partner.levelName || 'Участник';
+    const level = partner.level || 'member';
+    document.getElementById('levelBadge').textContent = levelName;
+    const levelIcons = { member:'⭐', manager:'🏅', director:'👑' };
+    document.getElementById('levelIcon').textContent = levelIcons[level] || '⭐';
+    if (level === 'director') {
+      document.getElementById('levelProgress').textContent = 'MAX';
+      document.getElementById('levelBar').style.width = '100%';
+      document.getElementById('levelNextText').textContent = 'Максимальный уровень!';
+    } else if (partner.nextLevelAt) {
+      const tc = partner.teamCount || 0;
+      const pct = Math.min((tc / partner.nextLevelAt) * 100, 100);
+      document.getElementById('levelProgress').textContent = tc + '/' + partner.nextLevelAt;
+      document.getElementById('levelBar').style.width = pct + '%';
+      const remaining = partner.nextLevelAt - tc;
+      document.getElementById('levelNextText').textContent = 'До следующего уровня: ещё ' + remaining + ' человек';
+    }
+
+    // Payout section
+    const balance = partner.balance || 0;
+    const payoutSection = document.getElementById('payoutSection');
+    if (payoutSection) {
+      let payoutHtml = `<div style="font-size:1.8rem;font-weight:900;color:var(--gold);margin-bottom:0.5rem;">${balance.toLocaleString('ru')} ₸</div>`;
+      if (balance >= 5000) {
+        payoutHtml += `<button class="btn-payout" onclick="requestPayout()">💸 Вывести ${balance.toLocaleString('ru')} ₸</button>`;
+      } else {
+        payoutHtml += `<div style="color:var(--muted);font-size:0.9rem;margin-bottom:0.5rem;">Минимум для вывода: 5,000 ₸</div>`;
+      }
+      payoutHtml += `<div id="payoutHistory" style="margin-top:1.2rem;"></div>`;
+      payoutSection.innerHTML = payoutHtml;
+      loadPayouts();
+    }
+
+    // Telegram link
+    const tgSection = document.getElementById('tgLinkSection');
+    if (partner.telegram_chat_id) {
+      tgSection.innerHTML = '<div style="color:var(--green);font-weight:600;font-size:0.95rem;">✅ Telegram привязан</div>';
+    } else {
+      const botUser = partner.botUsername || 'tulpar_bot';
+      const tgLink = 'https://t.me/' + botUser + '?start=' + partner.ref_code;
+      tgSection.innerHTML = '<p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.8rem;">Привяжите Telegram, чтобы получать уведомления о новых заказах и партнёрах</p>' +
+        '<a href="' + tgLink + '" target="_blank" style="display:inline-block;background:linear-gradient(135deg,#2AABEE,#1a8cc0);color:#fff;padding:0.7rem 1.5rem;border-radius:10px;font-weight:700;text-decoration:none;font-size:0.9rem;">✈️ Привязать Telegram</a>' +
+        '<p style="font-size:0.8rem;color:var(--muted);margin-top:0.6rem;">Нажмите кнопку и отправьте /start боту</p>';
+    }
   }
 
   function showPage(name) {
@@ -453,6 +687,10 @@
     event.currentTarget.classList.add('active');
     if (name === 'cards' && partner) setTimeout(drawCard, 50);
     if (name === 'history' && partner) loadTransactions();
+    if (name === 'shop' && partner) loadShopProducts();
+    if (name === 'academy' && partner) loadLeaderboard();
+    if (name === 'teamtree') loadTeamTree();
+    if (name === 'reorder') loadReorder();
   }
 
   function copyCode() { navigator.clipboard.writeText(partner.ref_code).then(()=>toast('Код скопирован!')); }
@@ -651,7 +889,7 @@
     ctx.fillRect(0, H - 40, W, 40);
     ctx.font = '11px Arial';
     ctx.fillStyle = '#A0A8C0';
-    ctx.fillText('tulparkz.kz  •  Telegram: @tulparkz  •  Работаем по всему Казахстану', 36, H - 14);
+    ctx.fillText('tulpar.kz  •  Telegram: @tulpar_support  •  Работаем по всему Казахстану', 36, H - 14);
 
     // Update message text
     document.getElementById('cardMsg').value = TEMPLATES[currentTpl].msg(partner, refLink);
@@ -828,7 +1066,372 @@
     }
   }
 
+  // ═══════════════ SHOP ═══════════════
+  let allProducts = [];
+  let selectedProductIds = new Set();
+
+  async function loadShopProducts() {
+    const grid = document.getElementById('shopProductGrid');
+    grid.innerHTML = '<div class="loading">Загрузка товаров...</div>';
+    const token = localStorage.getItem('tulpar_token');
+    const shopLink = location.origin + '/shop/' + (partner ? partner.ref_code : '');
+    document.getElementById('shopLinkText').textContent = shopLink;
+    try {
+      const [prodRes, selRes] = await Promise.all([
+        fetch('/api/products'),
+        fetch('/api/partner/shop-products', { headers:{ Authorization:'Bearer '+token } })
+      ]);
+      allProducts = await prodRes.json();
+      if (!Array.isArray(allProducts)) allProducts = allProducts.products || [];
+      const selData = await selRes.json();
+      const selIds = Array.isArray(selData) ? selData : (selData.productIds || selData.products || []);
+      selectedProductIds = new Set(selIds.map(id => typeof id === 'object' ? (id._id || id.id) : id));
+      renderShopGrid();
+    } catch(e) {
+      grid.innerHTML = '<p style="color:#FF8FA0;">Ошибка загрузки товаров</p>';
+    }
+  }
+
+  function renderShopGrid() {
+    const grid = document.getElementById('shopProductGrid');
+    if (!allProducts.length) { grid.innerHTML = '<p style="color:var(--muted);">Нет доступных товаров</p>'; return; }
+    grid.innerHTML = allProducts.map(p => {
+      const pid = p._id || p.id;
+      const sel = selectedProductIds.has(pid) ? ' selected' : '';
+      const img = p.image || p.images?.[0] || '';
+      const imgTag = img ? '<img src="'+img+'" alt="'+p.name+'" />' : '<div style="width:100%;aspect-ratio:1;background:rgba(255,255,255,0.05);border-radius:10px;margin-bottom:0.6rem;display:flex;align-items:center;justify-content:center;font-size:2rem;">📦</div>';
+      return '<div class="shop-product-item'+sel+'" onclick="toggleShopProduct(this,\''+pid+'\')">' +
+        '<div class="sp-check">'+(sel ? '✓' : '')+'</div>' +
+        imgTag +
+        '<div class="sp-name">'+p.name+'</div>' +
+        '<div class="sp-price">'+(p.price ? p.price.toLocaleString('ru')+' ₸' : '')+'</div>' +
+        '</div>';
+    }).join('');
+  }
+
+  function toggleShopProduct(el, pid) {
+    if (selectedProductIds.has(pid)) {
+      selectedProductIds.delete(pid);
+      el.classList.remove('selected');
+      el.querySelector('.sp-check').textContent = '';
+    } else {
+      selectedProductIds.add(pid);
+      el.classList.add('selected');
+      el.querySelector('.sp-check').textContent = '✓';
+    }
+  }
+
+  async function saveShopProducts() {
+    try {
+      const token = localStorage.getItem('tulpar_token');
+      const res = await fetch('/api/partner/shop-products', {
+        method:'POST',
+        headers:{'Content-Type':'application/json', Authorization:'Bearer '+token},
+        body: JSON.stringify({ productIds: Array.from(selectedProductIds) })
+      });
+      if (res.ok) toast('Товары магазина сохранены!');
+      else { const d = await res.json(); toast(d.error || 'Ошибка сохранения'); }
+    } catch(e) { toast('Ошибка: '+e.message); }
+  }
+
+  function copyShopLink() {
+    const link = location.origin + '/shop/' + partner.ref_code;
+    navigator.clipboard.writeText(link).then(() => toast('Ссылка на магазин скопирована!'));
+  }
+
+  // ═══════════════ ACADEMY ═══════════════
+  const LESSONS = [
+    { icon:'🚀', title:'Как начать в TULPAR', desc:'Как начать', video:'https://youtube.com/embed/placeholder1' },
+    { icon:'✈️', title:'Продажи через Telegram', desc:'Telegram', video:'https://youtube.com/embed/placeholder2' },
+    { icon:'📸', title:'Instagram для партнёров', desc:'Instagram', video:'https://youtube.com/embed/placeholder3' },
+    { icon:'📝', title:'Скрипты продаж', desc:'Скрипты', video:'https://youtube.com/embed/placeholder4' },
+    { icon:'👥', title:'Как пригласить друзей', desc:'Рост команды', video:'https://youtube.com/embed/placeholder5' },
+    { icon:'📊', title:'Как работают уровни', desc:'Уровни', video:'https://youtube.com/embed/placeholder6' }
+  ];
+
+  function renderLessons() {
+    const grid = document.getElementById('lessonGrid');
+    grid.innerHTML = LESSONS.map((l, i) =>
+      '<div class="lesson-card" onclick="toggleLesson('+i+')">' +
+        '<div class="lc-icon">'+l.icon+'</div>' +
+        '<div class="lc-title">'+l.title+'</div>' +
+        '<div class="lc-desc">'+l.desc+'</div>' +
+        '<div class="lc-video" id="lesson-video-'+i+'"><iframe src="" data-src="'+l.video+'" allowfullscreen></iframe></div>' +
+      '</div>'
+    ).join('');
+  }
+
+  function toggleLesson(idx) {
+    const vid = document.getElementById('lesson-video-'+idx);
+    const isOpen = vid.classList.contains('open');
+    document.querySelectorAll('.lc-video').forEach(v => { v.classList.remove('open'); v.querySelector('iframe').src = ''; });
+    if (!isOpen) {
+      vid.classList.add('open');
+      const iframe = vid.querySelector('iframe');
+      iframe.src = iframe.dataset.src;
+    }
+  }
+
+  async function loadLeaderboard() {
+    renderLessons();
+    const wrap = document.getElementById('leaderboardWrap');
+    wrap.innerHTML = '<div class="loading">Загрузка рейтинга...</div>';
+    try {
+      const res = await fetch('/api/leaderboard');
+      const data = await res.json();
+      const leaders = Array.isArray(data) ? data : (data.leaders || data.leaderboard || []);
+      if (!leaders.length) { wrap.innerHTML = '<p style="color:var(--muted);">Рейтинг пока пуст</p>'; return; }
+      const levelColors = { member:'rgba(255,255,255,0.1)', manager:'rgba(245,166,35,0.2)', director:'rgba(212,33,61,0.2)' };
+      const levelTextColors = { member:'var(--muted)', manager:'var(--gold)', director:'var(--primary)' };
+      const levelIcons = { member:'⭐', manager:'🏅', director:'👑' };
+      const rows = leaders.slice(0,10).map((l, i) => {
+        const lvl = l.level || 'member';
+        const lName = l.levelName || lvl;
+        const rankEmoji = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i+1);
+        return '<tr>' +
+          '<td class="lb-rank">'+rankEmoji+'</td>' +
+          '<td>'+(l.name||'—')+'</td>' +
+          '<td style="color:var(--muted)">'+(l.city||'—')+'</td>' +
+          '<td style="color:var(--green);font-weight:700">'+(l.teamCount||0)+'</td>' +
+          '<td><span class="lb-level" style="background:'+levelColors[lvl]+';color:'+levelTextColors[lvl]+'">'+levelIcons[lvl]+' '+lName+'</span></td>' +
+          '</tr>';
+      }).join('');
+      wrap.innerHTML = '<table class="leaderboard-table"><thead><tr><th>#</th><th>Имя</th><th>Город</th><th>Команда</th><th>Уровень</th></tr></thead><tbody>'+rows+'</tbody></table>';
+    } catch(e) {
+      wrap.innerHTML = '<p style="color:#FF8FA0;">Ошибка загрузки рейтинга</p>';
+    }
+  }
+
+  // ═══════════════ TEAM TREE ═══════════════
+  async function loadTeamTree() {
+    const container = document.getElementById('treeContainer');
+    container.innerHTML = '<div class="loading">Загрузка дерева...</div>';
+    try {
+      const token = localStorage.getItem('tulpar_token');
+      const res = await fetch('/api/partner/team-tree', { headers:{ Authorization:'Bearer '+token } });
+      const data = await res.json();
+      const stats = data.stats || {};
+      document.getElementById('treeStatL1').textContent = stats.l1 || 0;
+      document.getElementById('treeStatL2').textContent = stats.l2 || 0;
+      document.getElementById('treeStatTotal').textContent = stats.total || 0;
+      const tree = data.tree || [];
+      if (!tree.length) {
+        container.innerHTML = '<p style="color:var(--muted);padding:1rem;">Ваша команда пока пуста. Поделитесь реферальной ссылкой, чтобы пригласить партнёров.</p>';
+        return;
+      }
+      container.innerHTML = tree.map(node => renderTreeNode(node)).join('');
+    } catch(e) {
+      document.getElementById('treeContainer').innerHTML = '<p style="color:#FF8FA0;padding:1rem;">Ошибка загрузки дерева</p>';
+    }
+  }
+
+  function renderTreeNode(node) {
+    const date = node.created_at ? new Date(node.created_at).toLocaleDateString('ru-RU') : '';
+    const tariffColor = { free:'rgba(160,168,192,0.2)', start:'rgba(39,174,96,0.2)', partner:'rgba(245,166,35,0.2)', leader:'rgba(212,33,61,0.2)' };
+    const tariffText = { free:'var(--muted)', start:'var(--green)', partner:'var(--gold)', leader:'var(--primary)' };
+    const t = node.tariff || 'free';
+    const hasChildren = node.children && node.children.length > 0;
+    const nodeId = 'tree-' + (node.ref_code || Math.random().toString(36).slice(2));
+    return `
+      <div class="tree-card">
+        <div>
+          <div class="tree-name">${node.name || '—'}</div>
+          <div class="tree-meta">${node.city || '—'} · ${date}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+          <span class="tree-badge" style="background:${tariffColor[t]};color:${tariffText[t]}">${TARIFF_NAMES[t] || t}</span>
+          ${node.levelName ? `<span class="tree-badge" style="background:rgba(255,255,255,0.08);color:var(--muted)">${node.levelName}</span>` : ''}
+          ${hasChildren ? `<button class="tree-toggle" onclick="toggleTreeNode(this)">▶ ${node.children.length}</button>` : ''}
+        </div>
+      </div>
+      ${hasChildren ? `<div class="tree-children" id="${nodeId}"><div class="tree-node">${node.children.map(c => renderTreeNode(c)).join('')}</div></div>` : ''}`;
+  }
+
+  function toggleTreeNode(el) {
+    const card = el.closest('.tree-card');
+    const sibling = card.nextElementSibling;
+    if (sibling && sibling.classList.contains('tree-children')) {
+      const isOpen = sibling.classList.toggle('open');
+      el.textContent = (isOpen ? '▼ ' : '▶ ') + el.textContent.slice(2);
+    }
+  }
+
+  // ═══════════════ PAYOUTS ═══════════════
+  async function requestPayout() {
+    if (!confirm('Подтвердите запрос на вывод средств')) return;
+    try {
+      const token = localStorage.getItem('tulpar_token');
+      const res = await fetch('/api/partner/request-payout', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', Authorization:'Bearer '+token }
+      });
+      const data = await res.json();
+      if (res.ok) { toast(data.message || 'Заявка на вывод отправлена!'); await loadData(); }
+      else { toast(data.error || 'Ошибка при запросе вывода'); }
+    } catch(e) { toast('Ошибка: ' + e.message); }
+  }
+
+  async function loadPayouts() {
+    const container = document.getElementById('payoutHistory');
+    if (!container) return;
+    try {
+      const token = localStorage.getItem('tulpar_token');
+      const res = await fetch('/api/partner/payouts', { headers:{ Authorization:'Bearer '+token } });
+      const data = await res.json();
+      const payouts = Array.isArray(data) ? data : (data.payouts || []);
+      if (!payouts.length) {
+        container.innerHTML = '<p style="color:var(--muted);font-size:0.85rem;">История выплат пуста</p>';
+        return;
+      }
+      const statusMap = {
+        pending:  { label:'⏳ В обработке', cls:'pending' },
+        approved: { label:'✅ Выплачено',   cls:'approved' },
+        rejected: { label:'❌ Отклонено',   cls:'rejected' }
+      };
+      container.innerHTML = '<div class="section-title" style="margin-bottom:0.5rem;">История выплат</div>' +
+        payouts.map(p => {
+          const s = statusMap[p.status] || { label: p.status, cls:'pending' };
+          const date = p.created_at ? new Date(p.created_at).toLocaleDateString('ru-RU') : '';
+          return `<div class="payout-item">
+            <div>
+              <div style="font-weight:600">${(p.amount||0).toLocaleString('ru')} ₸</div>
+              <div style="font-size:0.75rem;color:var(--muted)">${date}</div>
+            </div>
+            <span class="payout-badge ${s.cls}">${s.label}</span>
+          </div>`;
+        }).join('');
+    } catch(e) {
+      if (document.getElementById('payoutHistory'))
+        document.getElementById('payoutHistory').innerHTML = '<p style="color:#FF8FA0;font-size:0.85rem;">Ошибка загрузки истории выплат</p>';
+    }
+  }
+
+  // ═══════════════ DAILY CHECK-IN ═══════════════
+  const CHECKIN_COINS = [10, 10, 15, 15, 20, 20, 50];
+
+  async function loadCheckinStatus() {
+    try {
+      const token = localStorage.getItem('tulpar_token');
+      const res = await fetch('/api/partner/checkin-status', { headers:{ Authorization:'Bearer '+token } });
+      const data = await res.json();
+      const btn = document.getElementById('checkinBtn');
+      const statusEl = document.getElementById('checkinStatus');
+      const streakEl = document.getElementById('checkinStreak');
+
+      if (data.checkedToday) {
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+        btn.style.cursor = 'default';
+        statusEl.textContent = 'Уже отмечено ✓';
+      } else {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+        const nextCoins = CHECKIN_COINS[Math.min((data.streak || 0) % 7, 6)];
+        statusEl.textContent = 'Получите ' + nextCoins + ' монет!';
+      }
+
+      // Update coins display
+      if (data.coins !== undefined) {
+        document.getElementById('statCoins').textContent = data.coins.toLocaleString('ru');
+      }
+
+      // Streak dots
+      const streak = data.streak || 0;
+      const dots = CHECKIN_COINS.map((coins, i) => {
+        const filled = i < (streak % 7) || (data.checkedToday && i < ((streak - 1) % 7 + 1));
+        return '<span style="display:inline-flex;flex-direction:column;align-items:center;gap:2px;margin-right:4px;">' +
+          '<span style="font-size:1rem;">' + (filled ? '●' : '○') + '</span>' +
+          '<span style="font-size:0.6rem;color:var(--muted);">' + coins + '</span>' +
+          '</span>';
+      }).join('');
+      streakEl.innerHTML = dots + '<span style="margin-left:6px;">🔥 ' + streak + ' дн.</span>';
+    } catch(e) {
+      document.getElementById('checkinStatus').textContent = 'Отметиться сегодня';
+    }
+  }
+
+  async function doCheckin() {
+    const btn = document.getElementById('checkinBtn');
+    btn.disabled = true;
+    try {
+      const token = localStorage.getItem('tulpar_token');
+      const res = await fetch('/api/partner/checkin', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', Authorization:'Bearer '+token }
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast('✨ +' + (data.coins || 0) + ' монет! Streak: ' + (data.streak || 0) + ' дней 🔥');
+        if (data.coins !== undefined) {
+          document.getElementById('statCoins').textContent = (data.totalCoins || data.coins).toLocaleString('ru');
+        }
+        loadCheckinStatus();
+      } else {
+        toast(data.error || 'Ошибка отметки');
+        btn.disabled = false;
+      }
+    } catch(e) {
+      toast('Ошибка: ' + e.message);
+      btn.disabled = false;
+    }
+  }
+
+  // ═══════════════ REORDER ═══════════════
+  async function loadReorder() {
+    const grid = document.getElementById('reorderGrid');
+    grid.innerHTML = '<div class="loading">Загрузка...</div>';
+    try {
+      const token = localStorage.getItem('tulpar_token');
+      const res = await fetch('/api/partner/reorder', { headers:{ Authorization:'Bearer '+token } });
+      const data = await res.json();
+      const products = Array.isArray(data) ? data : (data.products || []);
+      if (!products.length) {
+        grid.innerHTML = '<p style="color:var(--muted);padding:1rem;">У вас пока нет заказов</p>';
+        return;
+      }
+      const catalogBase = location.origin + '/catalog?ref=' + (partner ? partner.ref_code : '');
+      grid.innerHTML = products.map(p => {
+        const img = p.image || p.images?.[0] || '';
+        const imgTag = img
+          ? '<img src="' + img + '" alt="' + p.name + '" />'
+          : '<div style="width:100%;aspect-ratio:1;background:rgba(255,255,255,0.05);border-radius:10px;margin-bottom:0.6rem;display:flex;align-items:center;justify-content:center;font-size:2rem;">📦</div>';
+        return '<div class="shop-product-item">' +
+          imgTag +
+          '<div class="sp-name">' + p.name + '</div>' +
+          '<div class="sp-price">' + (p.price ? p.price.toLocaleString('ru') + ' ₸' : '') + '</div>' +
+          '<a href="' + catalogBase + '" target="_blank" style="display:block;margin-top:0.6rem;background:var(--primary);color:#fff;border:none;padding:0.4rem 0.8rem;border-radius:8px;font-weight:700;cursor:pointer;font-size:0.8rem;text-align:center;text-decoration:none;">Заказать</a>' +
+          '</div>';
+      }).join('');
+    } catch(e) {
+      grid.innerHTML = '<p style="color:#FF8FA0;padding:1rem;">Ошибка загрузки</p>';
+    }
+  }
+
   loadData();
+</script>
+
+<div class="mobile-nav">
+  <div class="mobile-nav-inner">
+    <button class="mob-tab active" onclick="mobNav('overview',this)"><span class="mob-icon">📊</span>Обзор</button>
+    <button class="mob-tab" onclick="mobNav('shop',this)"><span class="mob-icon">🏪</span>Магазин</button>
+    <button class="mob-tab" onclick="mobNav('reflink',this)"><span class="mob-icon">🔗</span>Ссылка</button>
+    <button class="mob-tab" onclick="mobNav('academy',this)"><span class="mob-icon">🎓</span>Академия</button>
+    <button class="mob-tab" onclick="mobNav('profile',this)"><span class="mob-icon">👤</span>Профиль</button>
+  </div>
+</div>
+<script>
+function mobNav(page, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelectorAll('.mob-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.side-nav-item').forEach(b => b.classList.remove('active'));
+  if (page === 'cards' && partner) setTimeout(drawCard, 50);
+  if (page === 'history' && partner) loadTransactions();
+  if (page === 'shop' && partner) loadShopProducts();
+  if (page === 'academy' && partner) loadLeaderboard();
+}
 </script>
 </body>
 </html>
