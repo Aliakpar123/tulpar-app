@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: tulpar-app
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn server:app
+    plan: free
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        value: 8785853877:AAH1TNH-b05dMopWM_3XosAzweqtdGTW56c
+      - key: TELEGRAM_ADMIN_CHAT_ID
+        value: "42893097"
+      - key: ADMIN_PASSWORD
+        value: tulpar2024
+      - key: JWT_SECRET
+        value: tulpar_super_secret_key_change_me
+      - key: TELEGRAM_BOT_USERNAME
+        value: tulpar_kz_bot
