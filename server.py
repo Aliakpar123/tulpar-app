@@ -1634,6 +1634,32 @@ def api_reorder():
     return jsonify([dict(r) for r in rows])
 
 
+# ─── HEALTH + KEEP ALIVE ─────────────────────────────────────────────────
+
+@app.get('/health')
+def health():
+    return jsonify({'status': 'ok'})
+
+
+def keep_alive():
+    """Ping self every 10 minutes to prevent Render free tier from sleeping."""
+    import threading
+    import time as time_module
+    def ping():
+        while True:
+            time_module.sleep(600)  # 10 minutes
+            try:
+                http_requests.get(f'https://tulpar-app.onrender.com/health', timeout=10)
+            except Exception:
+                pass
+    t = threading.Thread(target=ping, daemon=True)
+    t.start()
+
+
+# Start keep-alive on import (works with gunicorn too)
+keep_alive()
+
+
 # ─── START ───────────────────────────────────────────────────────────────
 
 if __name__ == '__main__':
